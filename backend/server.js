@@ -32,6 +32,28 @@ app.post('/file-post', async (req, res) => {
 });
 
 
+app.delete('/file-delete/:id', async (req, res) => {
+  const {id} = req.params;
+  const file = await File.findById(id);
+
+  
+  if (!file) {
+    return res.status(404).json({ success: false, message: 'File not found' });
+  }
+
+  try {
+    await File.findByIdAndDelete(id);
+    res.status(200).json({ success: true, message: 'File deleted successfully' });
+    
+  } catch (error) {
+    console.log("Failed to delete a file", error.message);
+    res.status(500).json({ success: false, message: error.message
+    });
+  }
+
+});
+
+
 app.listen(3000, () => {
     connectFB();
     console.log('Server is running on http://localhost:3000');
