@@ -1,16 +1,18 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { connectFB } from './config/db.js';
+import File from './models/file.model.js';
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
-app.post('/files', async (req, res) => {
+app.post('/file-post', async (req, res) => {
   const file = req.body; 
 
   if (!file.name || !file.security_level || !file.owner || !file.file_path) {

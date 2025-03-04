@@ -1,6 +1,6 @@
 # run the dev server
-npm run dev
-
 # run mongo db
+# Order:
 docker-compose up -d
+npm run dev
 mongosh -u admin -p password --authenticationDatabase admin
