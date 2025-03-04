@@ -10,6 +10,25 @@ app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
+app.post('/files', async (req, res) => {
+  const file = req.body; 
+
+  if (!file.name || !file.security_level || !file.owner || !file.file_path) {
+    return res.status(400).send({ message: 'All fields are required' });
+  }
+
+  const newFile = new File(file);
+
+  try {
+    await newFile.save();
+    res.status(201).json({ success: true, data: newFile });
+  }
+  catch (error) {
+    console.log("Failed to upload a file", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 app.listen(3000, () => {
     connectFB();
