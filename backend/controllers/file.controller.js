@@ -83,7 +83,6 @@ export const deleteFile = async (req, res) => {
 
     const file = await File.findById(id);
 
-
     if (!file) {
     return res.status(404).json({ success: false, message: 'File not found' });
     }
