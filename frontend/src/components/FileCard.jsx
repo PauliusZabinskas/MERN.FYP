@@ -85,16 +85,28 @@ const FileCard = ({ file }) => {
 			_hover={{ transform: "translateY(-5px)", shadow: "xl" }}
 			bg={bg}
 		>
-			<Image src={file.image} alt={file.name} h={48} w='full' objectFit='cover' />
 
 			<Box p={4}>
 				<Heading as='h3' size='md' mb={2}>
-					{file.name}
+					{"Name: " + file.name}
 				</Heading>
 
-				<Text fontWeight='bold' fontSize='xl' color={textColor} mb={4}>
-					${file.price}
+				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
+					{ "Size: " +file.size}
 				</Text>
+
+				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
+					{ "Security level: " +file.security_level}
+				</Text>
+
+				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
+					{ "Owner: " +file.owner}
+				</Text>
+
+				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
+					{ "File path: " +file.file_path}
+				</Text>
+
 
 				<HStack spacing={2}>
 					<IconButton icon={<EditIcon />} onClick={onOpen} colorScheme='blue' />

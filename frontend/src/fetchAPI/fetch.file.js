@@ -23,19 +23,19 @@ export const usefileAPI = create((set) => ({
         const data = await res.json();
         set({ files: data.data });
     },
-    deleteFile: async (pid) => {
-        const res = await fetch(`/api/file/${pid}`, {
+    deleteFile: async (id) => {
+        const res = await fetch(`/api/file/${id}`, {
             method: "DELETE",
         });
         const data = await res.json();
         if (!data.success) return { success: false, message: data.message };
 
         // update the ui immediately, without needing a refresh
-        set((state) => ({ files: state.files.filter((file) => file._id !== pid) }));
+        set((state) => ({ files: state.files.filter((file) => file._id !== id) }));
         return { success: true, message: data.message };
     },
-    updateFile: async (pid, updatedFile) => {
-        const res = await fetch(`/api/file/${pid}`, {
+    updateFile: async (id, updatedFile) => {
+        const res = await fetch(`/api/file/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export const usefileAPI = create((set) => ({
 
         // update the ui immediately, without needing a refresh
         set((state) => ({
-            files: state.files.map((file) => (file._id === pid ? data.data : file)),
+            files: state.files.map((file) => (file._id === id ? data.data : file)),
         }));
 
         return { success: true, message: data.message };
