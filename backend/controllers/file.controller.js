@@ -37,7 +37,7 @@ export const createFile = async (req, res) => {
 const file = req.body; 
 
 if (!file.name || !file.security_level || !file.owner || !file.file_path) {
-    return res.status(400).send({ message: 'All fields are required' });
+    return res.status(400).send({ message: 'All fields are required except size' });
 }
 
 const newFile = new File(file);
