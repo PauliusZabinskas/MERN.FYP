@@ -9,9 +9,9 @@ const fileSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-    file: {
-        type: Object,
-        required: true,
+    file_id: {
+        type: String,
+        required: false,
     },
 }, {
     timestamps: true,

@@ -1,17 +1,17 @@
 import express from 'express';
-import { createFile, getFile, getFiles, updateFile, deleteFile } from '../controllers/file.controller.js';
+import { createFileDetails, getAllFileDetails, getFileDetails, updateFileDetails, deleteFileDetails } from '../controllers/file.controller.js';
 
 
 const router = express.Router();
 
-router.get('/:id', getFile);
+router.get('/:id', getFileDetails);
 
-router.get('/', getFiles);
+router.get('/', getAllFileDetails);
 
-router.put('/:id', updateFile);
+router.put('/:id', updateFileDetails);
 
-router.post('/', createFile);
+router.post('/', createFileDetails);
 
-router.delete('/:id', deleteFile);
+router.delete('/:id', deleteFileDetails);
 
 export default router;

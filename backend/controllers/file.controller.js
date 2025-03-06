@@ -2,7 +2,7 @@ import File from "../models/file.model.js";
 import mongoose from 'mongoose'; 
 
 
-export const getFiles = async (req, res) => {
+export const getAllFileDetails = async (req, res) => {
   try {
     const files = await File.find({});
     res.status(200).json({ success: true, data: files });
@@ -12,11 +12,11 @@ export const getFiles = async (req, res) => {
   }
 }
 
-export const getFile = async (req, res) => {
+export const getFileDetails = async (req, res) => {
     const {id} = req.params;
     
   
-    if (!mongoose.Types.ObjectId.isValid(id)) { // Add this validation
+    if (!mongoose.Types.ObjectId.isValid(id)) { 
       return res.status(400).json({ success: false, message: 'Invalid file ID' });
     } 
   
@@ -33,10 +33,10 @@ export const getFile = async (req, res) => {
     }
 }
 
-export const createFile = async (req, res) => {
+export const createFileDetails = async (req, res) => {
 const file = req.body; 
 
-if (!file.name || !file.security_level || !file.owner || !file.file_path) {
+if (!file.name || !file.owner ) {
     return res.status(400).send({ message: 'All fields are required except size' });
 }
 
@@ -52,7 +52,7 @@ catch (error) {
 }
 }
 
-export const updateFile = async (req, res) => {
+export const updateFileDetails = async (req, res) => {
     const {id} = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -74,7 +74,7 @@ export const updateFile = async (req, res) => {
     }
 }
 
-export const deleteFile = async (req, res) => {
+export const deleteFileDetails = async (req, res) => {
     const {id} = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) { // Add this validation
