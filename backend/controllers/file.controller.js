@@ -55,7 +55,7 @@ catch (error) {
 export const updateFile = async (req, res) => {
     const {id} = req.params;
     
-    if (!mongoose.Types.ObjectId.isValid(id)) { // Add this validation
+    if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: 'Invalid file ID' });
     }
     const file = await File.findById(id);

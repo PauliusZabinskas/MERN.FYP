@@ -104,7 +104,7 @@ const FileCard = ({ file }) => {
 				</Text>
 
 				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-					{ "File path: " +file.file_path}
+					{ "File: " +file.file}
 				</Text>
 
 
@@ -132,20 +132,6 @@ const FileCard = ({ file }) => {
 								value={updatedFile.name}
 								onChange={(e) => setUpdatedFile({ ...updatedFile, name: e.target.value })}
 							/>
-							<Input
-								placeholder='File Size'
-								name='size'
-								type='number'
-								value={updatedFile.size}
-								onChange={(e) => setUpdatedFile({ ...updatedFile, size: e.target.value })}
-							/>
-							<Input
-								placeholder='Security Level'
-								name='security_level'
-                                type='number'
-								value={updatedFile.security_level}
-								onChange={(e) => setUpdatedFile({ ...updatedFile, security_level: e.target.value })}
-							/>
                             <Input
 								placeholder='File Owner'
 								name='owner'
@@ -153,8 +139,8 @@ const FileCard = ({ file }) => {
 								onChange={(e) => setUpdatedFile({ ...updatedFile, owner: e.target.value })}
 							/>
                             <Input
-								placeholder='File URL'
-								name='file_path'
+								placeholder='File'
+								name='file'
 								value={updatedFile.file_path}
 								onChange={(e) => setUpdatedFile({ ...updatedFile, file_path: e.target.value })}
 							/>
