@@ -1,37 +1,9 @@
-import { createHelia } from 'helia';
-import { unixfs } from '@helia/unixfs';
-import { createLibp2p } from 'libp2p';
-import { tcp } from '@libp2p/tcp';
-import { yamux } from '@chainsafe/libp2p-yamux';
-import { noise } from '@chainsafe/libp2p-noise';
-import { TextDecoder } from 'util';
+import axios from 'axios';
+import fs from 'fs';
+import FormData from 'form-data';
 
-
-// Polyfill CustomEvent
-global.CustomEvent = class CustomEvent extends Event {
-  constructor(event, params) {
-    params = params || { bubbles: false, cancelable: false, detail: null };
-    super(event, params);
-    this.detail = params.detail;
-  }
-};
-
-// Create a libp2p instance
-const libp2p = await createLibp2p({
-  transports: [tcp()],
-  streamMuxers: [yamux()],
-  connectionEncryption: [noise()]
-});
-
-// Create a Helia node with the libp2p instance
-const helia = await createHelia({ libp2p });
-
-// Create a UnixFS instance
-const heliaFs = unixfs(helia);
-
-// Initialize the root directory CID
-let rootDirCid = await heliaFs.addDirectory();
-console.log('Initialized root directory CID:', rootDirCid.toString());
+// IPFS node endpoint
+const ipfsEndpoint = 'http://localhost:5001/api/v0';
 
 // Function to add a file to IPFS
 export const addFile = async (req, res) => {
@@ -40,23 +12,19 @@ export const addFile = async (req, res) => {
       return res.status(400).send('No file uploaded.');
     }
 
-    // Check if file already exists
-    try {
-      await heliaFs.stat(`${rootDirCid}/${req.file.originalname}`);
-      return res.status(400).send('File already exists.');
-    } catch (err) {
-      if (err.code !== 'ERR_NOT_FOUND') {
-        throw err;
-      }
-    }
+    // Create a form data object
+    const formData = new FormData();
+    formData.append('file', req.file.buffer, req.file.originalname);
 
-    const data = new Uint8Array(req.file.buffer);
-    const fileCid = await heliaFs.addBytes(data);
+    // Add the file to IPFS
+    const response = await axios.post(`${ipfsEndpoint}/add`, formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
 
-    rootDirCid = await heliaFs.cp(fileCid, rootDirCid, req.file.originalname);
-    console.log('Updated root directory CID:', rootDirCid.toString());
-    res.send({ cid: fileCid.toString() });
-
+    const fileCid = response.data.Hash;
+    res.send({ cid: fileCid });
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).send('An error occurred while uploading the file.');
@@ -68,36 +36,25 @@ export const getFile = async (req, res) => {
   try {
     const { cid } = req.params;
 
-    // Check if the CID exists
-    try {
-      await heliaFs.stat(cid);
-    } catch (err) {
-      if (err.code === 'ERR_NOT_FOUND') {
-        return res.status(404).send('File not found');
-      }
-      throw err;
-    }
+    // Retrieve the file from IPFS
+    const response = await axios.post(`${ipfsEndpoint}/cat`, null, {
+      params: { arg: cid },
+      responseType: 'arraybuffer',
+    });
 
-    const decoder = new TextDecoder();
-    let content = '';
-    for await (const chunk of heliaFs.cat(cid)) {
-      content += decoder.decode(chunk, { stream: true });
-    }
-    res.send({ content });
+    res.send(response.data);
   } catch (error) {
     console.error('Error retrieving file:', error);
     res.status(500).send('An error occurred while retrieving the file.');
   }
 };
 
-// Function to get all files from IPFS
+// Function to get all files from IPFS (assuming you have a way to list all files)
 export const getAllFiles = async (req, res) => {
   try {
-    const files = [];
-    for await (const file of heliaFs.ls(rootDirCid)) {
-      files.push({ name: file.name, cid: file.cid.toString() });
-    }
-    res.send({ files });
+    // This is a placeholder function. IPFS does not have a built-in way to list all files.
+    // You would need to implement your own way to track and list all files.
+    res.status(501).send('Not implemented');
   } catch (error) {
     console.error('Error retrieving files:', error);
     res.status(500).send('An error occurred while retrieving the files.');

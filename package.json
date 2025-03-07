@@ -20,7 +20,9 @@
   "homepage": "https://github.com/PauliusZabinskas/MERN.FYP#readme",
   "dependencies": {
     "@chainsafe/libp2p-yamux": "^7.0.1",
+    "@helia/http": "^2.0.4",
     "@helia/unixfs": "^4.0.2",
+    "axios": "^1.8.2",
     "dotenv": "^16.4.7",
     "event-target-shim": "^6.0.2",
     "express": "^4.21.2",
