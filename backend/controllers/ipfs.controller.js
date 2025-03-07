@@ -4,9 +4,8 @@ import { createLibp2p } from 'libp2p';
 import { tcp } from '@libp2p/tcp';
 import { yamux } from '@chainsafe/libp2p-yamux';
 import { noise } from '@chainsafe/libp2p-noise';
-import fs from 'fs';
-import { TextEncoder, TextDecoder } from 'util';
-import { EventTarget, defineEventAttribute } from 'event-target-shim'; // Import EventTarget and defineEventAttribute
+import { TextDecoder } from 'util';
+
 
 // Polyfill CustomEvent
 global.CustomEvent = class CustomEvent extends Event {
@@ -17,7 +16,7 @@ global.CustomEvent = class CustomEvent extends Event {
   }
 };
 
-// Create a libp2p instance without the deprecated pnet protector
+// Create a libp2p instance
 const libp2p = await createLibp2p({
   transports: [tcp()],
   streamMuxers: [yamux()],
@@ -30,6 +29,10 @@ const helia = await createHelia({ libp2p });
 // Create a UnixFS instance
 const heliaFs = unixfs(helia);
 
+// Initialize the root directory CID
+let rootDirCid = await heliaFs.addDirectory();
+console.log('Initialized root directory CID:', rootDirCid.toString());
+
 // Function to add a file to IPFS
 export const addFile = async (req, res) => {
   try {
@@ -37,8 +40,22 @@ export const addFile = async (req, res) => {
       return res.status(400).send('No file uploaded.');
     }
     const data = new Uint8Array(req.file.buffer);
-    const cid = await heliaFs.addBytes(data);
-    res.send({ cid: cid.toString() });
+    const fileCid = await heliaFs.addBytes(data);
+    
+    // Check if file already exists, if so remove before adding
+    try {
+      await heliaFs.stat(`${rootDirCid}/${req.file.originalname}`);
+      await heliaFs.rm(`${rootDirCid}/${req.file.originalname}`);
+    } catch (err) {
+      if (err.code !== 'ERR_NOT_FOUND') {
+        throw err;
+      }
+    }
+    
+    
+    rootDirCid = await heliaFs.cp(fileCid, rootDirCid, req.file.originalname);
+    console.log('Updated root directory CID:', rootDirCid.toString());
+    res.send({ cid: fileCid.toString() });
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).send('An error occurred while uploading the file.');
@@ -50,7 +67,7 @@ export const getFile = async (req, res) => {
   try {
     const { cid } = req.params;
 
-    // Check if the file exists
+    // Check if the CID exists
     try {
       await heliaFs.stat(cid);
     } catch (err) {
@@ -76,8 +93,8 @@ export const getFile = async (req, res) => {
 export const getAllFiles = async (req, res) => {
   try {
     const files = [];
-    for await (const file of heliaFs.ls('/')) {
-      files.push(file);
+    for await (const file of heliaFs.ls(rootDirCid)) {
+      files.push({ name: file.name, cid: file.cid.toString() });
     }
     res.send({ files });
   } catch (error) {
