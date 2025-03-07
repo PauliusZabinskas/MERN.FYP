@@ -41,3 +41,33 @@ export const getFile = (req, res) => {
     res.status(404).send('File not found');
   }
 };
+
+export const getAllFiles = (req, res) => {
+  const uploadPath = path.join(__dirname, '../uploads');
+  fs.readdir(uploadPath, (err, files) => {
+    if (err) {
+      console.error('Failed to list files', err);
+      res.status(500).send('Failed to list files');
+    } else {
+      res.status(200).json({ files });
+    }
+  });
+}
+
+export const deleteFile = (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '../uploads', filename);
+
+  if (fs.existsSync(filePath)) {
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error('Failed to delete file', err);
+        res.status(500).send('Failed to delete file');
+      } else {
+        res.status(200).send('File deleted');
+      }
+    });
+  } else {
+    res.status(404).send('File not found');
+  }
+};
