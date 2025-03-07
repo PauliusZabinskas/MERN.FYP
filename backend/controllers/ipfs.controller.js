@@ -39,23 +39,24 @@ export const addFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).send('No file uploaded.');
     }
-    const data = new Uint8Array(req.file.buffer);
-    const fileCid = await heliaFs.addBytes(data);
-    
-    // Check if file already exists, if so remove before adding
+
+    // Check if file already exists
     try {
       await heliaFs.stat(`${rootDirCid}/${req.file.originalname}`);
-      await heliaFs.rm(`${rootDirCid}/${req.file.originalname}`);
+      return res.status(400).send('File already exists.');
     } catch (err) {
       if (err.code !== 'ERR_NOT_FOUND') {
         throw err;
       }
     }
-    
-    
+
+    const data = new Uint8Array(req.file.buffer);
+    const fileCid = await heliaFs.addBytes(data);
+
     rootDirCid = await heliaFs.cp(fileCid, rootDirCid, req.file.originalname);
     console.log('Updated root directory CID:', rootDirCid.toString());
     res.send({ cid: fileCid.toString() });
+
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).send('An error occurred while uploading the file.');
