@@ -71,3 +71,17 @@ export const getFile = async (req, res) => {
     res.status(500).send('An error occurred while retrieving the file.');
   }
 };
+
+// Function to get all files from IPFS
+export const getAllFiles = async (req, res) => {
+  try {
+    const files = [];
+    for await (const file of heliaFs.ls('/')) {
+      files.push(file);
+    }
+    res.send({ files });
+  } catch (error) {
+    console.error('Error retrieving files:', error);
+    res.status(500).send('An error occurred while retrieving the files.');
+  }
+};
