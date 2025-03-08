@@ -7,7 +7,7 @@ export const usefileAPI = create((set) => ({
         if (!newFile.name || !newFile.file_path || !newFile.owner || !newFile.security_level) {
             return { success: false, message: "Please fill in all fields." };
         }
-        const res = await fetch("/api/file", {
+        const res = await fetch("/api/file-details", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -19,7 +19,7 @@ export const usefileAPI = create((set) => ({
         return { success: true, message: "File created successfully" };
     },
     fetchFiles: async () => {
-        const res = await fetch("/api/file");
+        const res = await fetch("/api/file-details");
         const data = await res.json();
         set({ files: data.data });
     },

@@ -92,19 +92,11 @@ const FileCard = ({ file }) => {
 				</Heading>
 
 				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-					{ "Size: " +file.size}
-				</Text>
-
-				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-					{ "Security level: " +file.security_level}
-				</Text>
-
-				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
 					{ "Owner: " +file.owner}
 				</Text>
 
 				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-					{ "File: " +file.file}
+					{ "File: " +file.cid}
 				</Text>
 
 
