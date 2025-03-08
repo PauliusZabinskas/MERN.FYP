@@ -45,7 +45,7 @@ const CreatePage = () => {
     formData.append("file", selectedFile); // Ensure the field name is 'file'
 
     try {
-      const response = await axios.post("/api/upload", formData, {
+      const response = await axios.post("/api/file-details", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setNewFile({ ...newFile, file_path: response.data.filePath });

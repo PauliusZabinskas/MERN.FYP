@@ -4,17 +4,25 @@ export const usefileAPI = create((set) => ({
     files: [],
     setFile: (files) => set({ files }),
     createFile: async (newFile) => {
-        if (!newFile.name || !newFile.file_path || !newFile.owner || !newFile.security_level) {
+        if (!newFile.name || !newFile.owner || !newFile.file) {
             return { success: false, message: "Please fill in all fields." };
         }
+
+        const formData = new FormData();
+        formData.append('name', newFile.name);
+        formData.append('owner', newFile.owner);
+        formData.append('file', newFile.file);
+
         const res = await fetch("/api/file-details", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(newFile),
+            body: formData,
         });
+
         const data = await res.json();
+        if (!data.success) {
+            return { success: false, message: data.message };
+        }
+
         set((state) => ({ files: [...state.files, data.data] }));
         return { success: true, message: "File created successfully" };
     },
@@ -24,7 +32,7 @@ export const usefileAPI = create((set) => ({
         set({ files: data.data });
     },
     deleteFile: async (id) => {
-        const res = await fetch(`/api/file/${id}`, {
+        const res = await fetch(`/api/file-details/${id}`, {
             method: "DELETE",
         });
         const data = await res.json();
@@ -35,7 +43,7 @@ export const usefileAPI = create((set) => ({
         return { success: true, message: data.message };
     },
     updateFile: async (id, updatedFile) => {
-        const res = await fetch(`/api/file/${id}`, {
+        const res = await fetch(`/api/file-details/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
