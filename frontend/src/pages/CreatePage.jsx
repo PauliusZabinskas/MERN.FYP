@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { Box, Button, Container, Heading, Input, useColorModeValue, useToast, VStack } from "@chakra-ui/react";
 import Dropzone from "react-dropzone";
 import { usefileAPI } from "../fetchAPI/fetch.file.js";
-import axios from "axios";
 
 const CreatePage = () => {
   const [newFile, setNewFile] = useState({
     name: "",
     owner: "",
-    file:""
+    file: null
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -19,7 +18,7 @@ const CreatePage = () => {
     const file = acceptedFiles[0];
     if (file && file.type === "text/plain") {
       setSelectedFile(file);
-      setNewFile({ ...newFile, name: file.name, owner: file.owner , file: file });
+      setNewFile({ ...newFile, name: file.name, file: file });
     } else {
       toast({
         title: "Invalid file type",
@@ -42,13 +41,21 @@ const CreatePage = () => {
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile); // Ensure the field name is 'file'
+    formData.append("name", newFile.name);
+    formData.append("owner", newFile.owner);
+    formData.append("file", selectedFile);
 
     try {
-      const response = await axios.post("/api/file-details", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const response = await fetch("/api/file-details", {
+        method: "POST",
+        body: formData,
       });
-      setNewFile({ ...newFile, file_path: response.data.filePath });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      setNewFile({ name: "", owner: "", file: null });
+      setSelectedFile(null);
       toast({
         title: "File uploaded successfully",
         description: `Uploaded: ${selectedFile.name}`,
@@ -58,32 +65,11 @@ const CreatePage = () => {
     } catch (error) {
       toast({
         title: "Upload failed",
-        description: error.response?.data?.message || "Something went wrong",
+        description: error.message || "Something went wrong",
         status: "error",
         isClosable: true,
       });
     }
-  };
-
-  const handleAddFile = async () => {
-    const { success, message } = await createFile(newFile);
-    if (!success) {
-      toast({
-        title: "Error",
-        description: message,
-        status: "error",
-        isClosable: true,
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: message,
-        status: "success",
-        isClosable: true,
-      });
-    }
-    setNewFile({ name: "", owner:"", file: "" });
-    setSelectedFile(null);
   };
 
   return (
@@ -117,7 +103,6 @@ const CreatePage = () => {
             </Dropzone>
             {selectedFile && <p>Selected file: {selectedFile.name}</p>}
             <Button colorScheme='blue' onClick={handleFileUpload} w='full'>Upload File</Button>
-            <Button colorScheme='green' onClick={handleAddFile} w='full'>Add File</Button>
           </VStack>
         </Box>
       </VStack>
