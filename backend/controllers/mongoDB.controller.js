@@ -1,8 +1,7 @@
+import axios from 'axios';
 import File from "../models/file.model.js";
-import mongoose from 'mongoose'; 
-import axios from 'axios'; 
-
-
+import mongoose from 'mongoose';
+import FormData from 'form-data';
 
 export const getAllFileDetails = async (req, res) => {
   try {
@@ -15,88 +14,106 @@ export const getAllFileDetails = async (req, res) => {
 }
 
 export const getFileDetails = async (req, res) => {
-    const {id} = req.params;
-    
-  
-    if (!mongoose.Types.ObjectId.isValid(id)) { 
-      return res.status(400).json({ success: false, message: 'Invalid file ID' });
-    } 
-  
-    const file = await File.findById(id);
-    if (!file) {
-      return res.status(404).json({ success: false, message: 'File not found' });
-    }
-  
-    try {
-      res.status(200).json({ success: true, data: file });
-    } catch (error) {
-      console.log("Failed to fetch a file", error.message);
-      res.status(500).json({ success: false, message: error.message });
-    }
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid file ID' });
+  }
+
+  const file = await File.findById(id);
+  if (!file) {
+    return res.status(404).json({ success: false, message: 'File not found' });
+  }
+
+  try {
+    res.status(200).json({ success: true, data: file });
+  } catch (error) {
+    console.log("Failed to fetch a file", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
 }
 
 export const createFileDetails = async (req, res) => {
-    const file = req.body; 
+  const fileDetails = req.body;
 
+  if (!fileDetails.name || !fileDetails.owner) {
+    return res.status(400).send({ message: 'All fields are required' });
+  }
 
+  if (!req.file) {
+    return res.status(400).send({ message: 'No file uploaded.' });
+  }
 
-    if (!file.name || !file.owner ) {
-        return res.status(400).send({ message: 'All fields are required' });
+  try {
+    // Upload the file to IPFS and get the CID
+    const formData = new FormData();
+    formData.append('file', req.file.buffer, req.file.originalname);
+
+    const ipfsResponse = await axios.post('http://localhost:5000/api/ipfs', formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    console.log('IPFS response:', ipfsResponse.data);
+
+    // Extract the CID from the IPFS response
+    const fileCid = ipfsResponse.data.Hash || ipfsResponse.data.cid || ipfsResponse.data.Cid;
+
+    if (!fileCid) {
+      return res.status(500).send({ message: 'Failed to retrieve CID from IPFS response' });
     }
 
-    const newFile = new File(file);
+    // Add the CID to the file details
+    const newFile = new File({ ...fileDetails, cid: fileCid });
 
-    try {
-        await newFile.save();
-        res.status(201).json({ success: true, data: newFile });
-    }
-    catch (error) {
-        console.log("Failed to upload a file", error.message);
-        res.status(500).json({ success: false, message: error.message });
-    }
+    await newFile.save();
+    res.status(201).json({ success: true, data: newFile });
+  } catch (error) {
+    console.log("Failed to upload a file", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
 }
 
 export const updateFileDetails = async (req, res) => {
-    const {id} = req.params;
-    
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ success: false, message: 'Invalid file ID' });
-    }
-    const file = await File.findById(id);
-    
-    if (!file) {
-        return res.status(404).json({ success: false, message: 'File not found' });
-    }
-    
-    try {
-        
-        const updatedFile = await File.findByIdAndUpdate (id, req.body, { new: true, runValidators: true });
-        res.status(200).json({ success: true, data: updatedFile });
-    } catch (error) {
-        console.log("Failed to update a file", error.message);
-        res.status(500).json({ success: false, message: error.message });
-    }
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid file ID' });
+  }
+  const file = await File.findById(id);
+
+  if (!file) {
+    return res.status(404).json({ success: false, message: 'File not found' });
+  }
+
+  try {
+    const updatedFile = await File.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    res.status(200).json({ success: true, data: updatedFile });
+  } catch (error) {
+    console.log("Failed to update a file", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
 }
 
 export const deleteFileDetails = async (req, res) => {
-    const {id} = req.params;
+  const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) { // Add this validation
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ success: false, message: 'Invalid file ID' });
-    }
+  }
 
-    const file = await File.findById(id);
+  const file = await File.findById(id);
 
-    if (!file) {
+  if (!file) {
     return res.status(404).json({ success: false, message: 'File not found' });
-    }
+  }
 
-    try {
+  try {
     await File.findByIdAndDelete(id);
     res.status(200).json({ success: true, message: 'File deleted successfully' });
-    
-    } catch (error) {
+  } catch (error) {
     console.log("Failed to delete a file", error.message);
     res.status(500).json({ success: false, message: error.message });
-    }
+  }
 }

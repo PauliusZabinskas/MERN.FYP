@@ -9,10 +9,10 @@ const fileSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-    CID: {
-        type: String,
-        required: false,
-    },
+  cid: {
+      type: String,
+      required: false,
+  },
 }, {
     timestamps: true,
 });
