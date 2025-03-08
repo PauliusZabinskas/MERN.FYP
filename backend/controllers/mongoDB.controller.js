@@ -1,5 +1,7 @@
 import File from "../models/file.model.js";
 import mongoose from 'mongoose'; 
+import axios from 'axios'; 
+
 
 
 export const getAllFileDetails = async (req, res) => {
@@ -34,22 +36,24 @@ export const getFileDetails = async (req, res) => {
 }
 
 export const createFileDetails = async (req, res) => {
-const file = req.body; 
+    const file = req.body; 
 
-if (!file.name || !file.owner ) {
-    return res.status(400).send({ message: 'All fields are required except size' });
-}
 
-const newFile = new File(file);
 
-try {
-    await newFile.save();
-    res.status(201).json({ success: true, data: newFile });
-}
-catch (error) {
-    console.log("Failed to upload a file", error.message);
-    res.status(500).json({ success: false, message: error.message });
-}
+    if (!file.name || !file.owner ) {
+        return res.status(400).send({ message: 'All fields are required' });
+    }
+
+    const newFile = new File(file);
+
+    try {
+        await newFile.save();
+        res.status(201).json({ success: true, data: newFile });
+    }
+    catch (error) {
+        console.log("Failed to upload a file", error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
 }
 
 export const updateFileDetails = async (req, res) => {

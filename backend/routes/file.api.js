@@ -1,5 +1,5 @@
 import express from 'express';
-import { createFileDetails, getAllFileDetails, getFileDetails, updateFileDetails, deleteFileDetails } from '../controllers/file.controller.js';
+import { createFileDetails, getAllFileDetails, getFileDetails, updateFileDetails, deleteFileDetails } from '../controllers/mongoDB.controller.js';
 
 
 const router = express.Router();
