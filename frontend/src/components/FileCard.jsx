@@ -114,6 +114,10 @@ const FileCard = ({ file }) => {
                     {"Name: " + file.name}
                 </Heading>
 
+				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
+                    {"Description: " + file.description}
+                </Text>
+
                 <Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
                     {"Owner: " + file.owner}
                 </Text>
@@ -146,10 +150,10 @@ const FileCard = ({ file }) => {
                     <ModalBody>
                         <VStack spacing={4}>
                             <Input
-                                placeholder='File Name'
-                                name='name'
-                                value={updatedFile.name}
-                                onChange={(e) => setUpdatedFile({ ...updatedFile, name: e.target.value })}
+                                placeholder='Description'
+                                name='description'
+                                value={updatedFile.description}
+                                onChange={(e) => setUpdatedFile({ ...updatedFile, description: e.target.value })}
                             />
                             <Input
                                 placeholder='File Owner'

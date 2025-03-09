@@ -4,12 +4,13 @@ export const usefileAPI = create((set) => ({
     files: [],
     setFile: (files) => set({ files }),
     createFile: async (newFile) => {
-        if (!newFile.name || !newFile.owner || !newFile.file) {
+        if (!newFile.description || !newFile.owner || !newFile.file) {
             return { success: false, message: "Please fill in all fields." };
         }
 
         const formData = new FormData();
         formData.append('name', newFile.name);
+        formData.append('description', newFile.description)
         formData.append('owner', newFile.owner);
         formData.append('file', newFile.file);
 

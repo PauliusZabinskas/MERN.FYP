@@ -36,7 +36,7 @@ export const getFileDetails = async (req, res) => {
 export const createFileDetails = async (req, res) => {
   const fileDetails = req.body;
 
-  if (!fileDetails.name || !fileDetails.owner) {
+  if (!fileDetails.name || !fileDetails.description || !fileDetails.owner) {
     return res.status(400).send({ message: 'All fields are required' });
   }
 

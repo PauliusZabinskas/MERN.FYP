@@ -6,13 +6,13 @@ import { usefileAPI } from "../fetchAPI/fetch.file.js";
 const CreatePage = () => {
   const [newFile, setNewFile] = useState({
     name: "",
+    description:"",
     owner: "",
     file: null
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
   const toast = useToast();
-  const { createFile } = usefileAPI();
 
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -42,6 +42,7 @@ const CreatePage = () => {
 
     const formData = new FormData();
     formData.append("name", newFile.name);
+    formData.append("description", newFile.description);
     formData.append("owner", newFile.owner);
     formData.append("file", selectedFile);
 
@@ -54,7 +55,7 @@ const CreatePage = () => {
       if (!data.success) {
         throw new Error(data.message);
       }
-      setNewFile({ name: "", owner: "", file: null });
+      setNewFile({ name: "", description:"", owner: "", file: null });
       setSelectedFile(null);
       toast({
         title: "File uploaded successfully",
@@ -81,11 +82,11 @@ const CreatePage = () => {
 
         <Box w={"full"} bg={useColorModeValue("white", "gray.800")} p={6} rounded={"lg"} shadow={"md"}>
           <VStack spacing={4}>
-            <Input
-              placeholder='File Name'
-              name='name'
-              value={newFile.name}
-              onChange={(e) => setNewFile({ ...newFile, name: e.target.value })}
+             <Input
+              placeholder='File description'
+              name='description'
+              value={newFile.description}
+              onChange={(e) => setNewFile({ ...newFile, description: e.target.value })}
             />
             <Input
               placeholder='File owner'
