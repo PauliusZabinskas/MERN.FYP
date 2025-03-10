@@ -2,17 +2,20 @@ import React, { useState } from "react";
 import { Box, Button, Container, Heading, Input, useColorModeValue, useToast, VStack } from "@chakra-ui/react";
 import Dropzone from "react-dropzone";
 import { usefileAPI } from "../fetchAPI/fetch.file.js";
+import { encryptFile } from "../enc.dec/encryption.js";
 
 const CreatePage = () => {
   const [newFile, setNewFile] = useState({
     name: "",
-    description:"",
+    description: "",
     owner: "",
     file: null
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const toast = useToast();
+  const { createFile } = usefileAPI();
 
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -40,26 +43,31 @@ const CreatePage = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", newFile.name);
-    formData.append("description", newFile.description);
-    formData.append("owner", newFile.owner);
-    formData.append("file", selectedFile);
-
-    try {
-      const response = await fetch("/api/file-details", {
-        method: "POST",
-        body: formData,
+    if (!newFile.description || !newFile.owner) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all fields.",
+        status: "error",
+        isClosable: true,
       });
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.message);
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      // Use the store's createFile function
+      const { success, message } = await createFile(newFile);
+      
+      if (!success) {
+        throw new Error(message);
       }
-      setNewFile({ name: "", description:"", owner: "", file: null });
+      
+      setNewFile({ name: "", description: "", owner: "", file: null });
       setSelectedFile(null);
       toast({
         title: "File uploaded successfully",
-        description: `Uploaded: ${selectedFile.name}`,
+        description: `Uploaded: ${selectedFile.name} (encrypted)`,
         status: "success",
         isClosable: true,
       });
@@ -70,6 +78,8 @@ const CreatePage = () => {
         status: "error",
         isClosable: true,
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -103,7 +113,15 @@ const CreatePage = () => {
               )}
             </Dropzone>
             {selectedFile && <p>Selected file: {selectedFile.name}</p>}
-            <Button colorScheme='blue' onClick={handleFileUpload} w='full'>Upload File</Button>
+            <Button 
+              colorScheme='blue' 
+              onClick={handleFileUpload} 
+              w='full'
+              isLoading={isUploading}
+              loadingText="Encrypting & Uploading"
+            >
+              Upload Encrypted File
+            </Button>
           </VStack>
         </Box>
       </VStack>
