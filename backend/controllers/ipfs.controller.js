@@ -60,3 +60,23 @@ export const getAllFiles = async (req, res) => {
     res.status(500).send('An error occurred while retrieving the files.');
   }
 };
+
+export const downloadFile = async (req, res) => {
+  try {
+    const { cid } = req.params;
+
+    // Retrieve the file from IPFS using axios (consistent with other functions)
+    const response = await axios.post(`${ipfsEndpoint}/cat`, null, {
+      params: { arg: cid },
+      responseType: 'arraybuffer',
+    });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', `attachment; filename="${cid}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    res.status(500).json({ success: false, message: 'Failed to download file' });
+  }
+};

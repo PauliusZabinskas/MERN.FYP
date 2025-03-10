@@ -78,20 +78,30 @@ const FileCard = ({ file }) => {
 
     const handleDownloadFile = async (cid) => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/ipfs/file/${cid}`, {
+            const response = await axios.get(`http://localhost:5000/api/ipfs/download/${cid}`, {
                 responseType: 'blob',
+                withCredentials: true
             });
+                
+            if (!response.data) {
+                throw new Error('File not found');
+            }
+            
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', file.name); // or any other extension
+            link.setAttribute('download', file.name);
             document.body.appendChild(link);
             link.click();
+            
+            // Cleanup
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error) {
+            console.error('Download error:', error);
             toast({
-                title: "Error",
-                description: "Failed to download file",
+                title: "Download Failed",
+                description: error.message || "Could not download the file",
                 status: "error",
                 duration: 3000,
                 isClosable: true,
