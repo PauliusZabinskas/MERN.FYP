@@ -21,7 +21,6 @@ import {
 } from "@chakra-ui/react";
 import { usefileAPI } from "../fetchAPI/fetch.file.js";
 import { useState } from "react";
-import axios from 'axios';
 
 const FileCard = ({ file }) => {
     const [updatedFile, setUpdatedFile] = useState(file);
@@ -29,7 +28,7 @@ const FileCard = ({ file }) => {
     const textColor = useColorModeValue("gray.600", "gray.200");
     const bg = useColorModeValue("white", "gray.800");
 
-    const { deleteFile, updateFile } = usefileAPI();
+    const { deleteFile, updateFile, downloadFile } = usefileAPI();
     const toast = useToast();
     const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -76,27 +75,21 @@ const FileCard = ({ file }) => {
         }
     };
 
-    const handleDownloadFile = async (cid) => {
+    const handleDownloadFile = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/ipfs/download/${cid}`, {
-                responseType: 'blob',
-                withCredentials: true
-            });
-                
-            if (!response.data) {
-                throw new Error('File not found');
+            const { success, message } = await downloadFile(file);
+            
+            if (!success) {
+                throw new Error(message);
             }
             
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', file.name);
-            document.body.appendChild(link);
-            link.click();
-            
-            // Cleanup
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            toast({
+                title: "Download Successful",
+                description: "File decrypted and downloaded successfully",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
         } catch (error) {
             console.error('Download error:', error);
             toast({
@@ -124,7 +117,7 @@ const FileCard = ({ file }) => {
                     {"Name: " + file.name}
                 </Heading>
 
-				<Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
+                <Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
                     {"Description: " + file.description}
                 </Text>
 
@@ -145,7 +138,7 @@ const FileCard = ({ file }) => {
                     />
                     <IconButton
                         icon={<DownloadIcon />}
-                        onClick={() => handleDownloadFile(file.cid)}
+                        onClick={handleDownloadFile}
                         colorScheme='green'
                     />
                 </HStack>
