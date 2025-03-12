@@ -5,6 +5,7 @@ import axios from 'axios';
 export const usefileAPI = create((set) => ({
     files: [],
     setFile: (files) => set({ files }),
+    
     createFile: async (newFile) => {
         if (!newFile.description || !newFile.owner || !newFile.file) {
             return { success: false, message: "Please fill in all fields." };
@@ -12,6 +13,9 @@ export const usefileAPI = create((set) => ({
 
         try {
             console.log("Starting file encryption process...");
+            
+            // Get authentication token
+            const token = localStorage.getItem("token");
             
             // Encrypt the file before uploading
             const encryptedFile = await encryptFile(newFile.file);
@@ -26,7 +30,11 @@ export const usefileAPI = create((set) => ({
             console.log("Uploading encrypted file...");
             const res = await fetch("/api/file-details", {
                 method: "POST",
+                headers: {
+                    "Authorization": token ? `Bearer ${token}` : undefined
+                },
                 body: formData,
+                credentials: 'include'
             });
 
             const data = await res.json();
@@ -46,9 +54,15 @@ export const usefileAPI = create((set) => ({
         try {
             console.log("Starting file download process for:", file.name);
             
+            // Get authentication token
+            const token = localStorage.getItem("token");
+            
             const response = await axios.get(`http://localhost:5000/api/ipfs/download/${file.cid}`, {
                 responseType: 'blob',
-                withCredentials: true
+                withCredentials: true,
+                headers: {
+                    "Authorization": token ? `Bearer ${token}` : undefined
+                }
             });
                 
             if (!response.data) {
@@ -81,39 +95,83 @@ export const usefileAPI = create((set) => ({
     },
     
     fetchFiles: async () => {
-        const res = await fetch("/api/file-details");
-        const data = await res.json();
-        set({ files: data.data });
+        try {
+            // Get authentication token
+            const token = localStorage.getItem("token");
+            
+            const res = await fetch("/api/file-details", {
+                headers: {
+                    "Authorization": token ? `Bearer ${token}` : undefined
+                },
+                credentials: 'include'
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Failed to fetch files");
+            }
+            
+            const data = await res.json();
+            set({ files: data.data });
+            return { success: true };
+        } catch (error) {
+            console.error("Error fetching files:", error);
+            return { success: false, message: error.message };
+        }
     },
     
     deleteFile: async (id) => {
-        const res = await fetch(`/api/file-details/${id}`, {
-            method: "DELETE",
-        });
-        const data = await res.json();
-        if (!data.success) return { success: false, message: data.message };
-
-        // update the ui immediately, without needing a refresh
-        set((state) => ({ files: state.files.filter((file) => file._id !== id) }));
-        return { success: true, message: data.message };
+        try {
+            // Get authentication token
+            const token = localStorage.getItem("token");
+            
+            const res = await fetch(`/api/file-details/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": token ? `Bearer ${token}` : undefined
+                },
+                credentials: 'include'
+            });
+            
+            const data = await res.json();
+            if (!data.success) return { success: false, message: data.message };
+    
+            // update the ui immediately, without needing a refresh
+            set((state) => ({ files: state.files.filter((file) => file._id !== id) }));
+            return { success: true, message: data.message };
+        } catch (error) {
+            console.error("Error deleting file:", error);
+            return { success: false, message: error.message || "Failed to delete file" };
+        }
     },
     
     updateFile: async (id, updatedFile) => {
-        const res = await fetch(`/api/file-details/${id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(updatedFile),
-        });
-        const data = await res.json();
-        if (!data.success) return { success: false, message: data.message };
-
-        // update the ui immediately, without needing a refresh
-        set((state) => ({
-            files: state.files.map((file) => (file._id === id ? data.data : file)),
-        }));
-        
-        return { success: true, message: data.message };
+        try {
+            // Get authentication token
+            const token = localStorage.getItem("token");
+            
+            const res = await fetch(`/api/file-details/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": token ? `Bearer ${token}` : undefined
+                },
+                body: JSON.stringify(updatedFile),
+                credentials: 'include'
+            });
+            
+            const data = await res.json();
+            if (!data.success) return { success: false, message: data.message };
+    
+            // update the ui immediately, without needing a refresh
+            set((state) => ({
+                files: state.files.map((file) => (file._id === id ? data.data : file)),
+            }));
+            
+            return { success: true, message: data.message };
+        } catch (error) {
+            console.error("Error updating file:", error);
+            return { success: false, message: error.message || "Failed to update file" };
+        }
     },
 }));

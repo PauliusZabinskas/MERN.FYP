@@ -29,16 +29,25 @@ const LoginPage = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // In your LoginPage.jsx, update the fetch call:
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation...
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
     try {
-      const response = await fetch("/api/auth/login", {
+      console.log("Logging in with:", formData.email);
+      const response = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,6 +66,9 @@ const handleSubmit = async (e) => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       
+      // Force update for components listening to localStorage
+      window.dispatchEvent(new Event('storage'));
+      
       toast({
         title: "Success",
         description: "Login successful!",
@@ -66,10 +78,18 @@ const handleSubmit = async (e) => {
       });
       
       // Redirect to homepage
-      navigate("/");
+      navigate("/home");
       
     } catch (error) {
-      // Error handling...
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -132,7 +152,7 @@ const handleSubmit = async (e) => {
               
               <Text align="center" mt={4}>
                 Don't have an account?{" "}
-                <Link to="/register">
+                <Link to="/">
                   <Text as="span" color="blue.500" _hover={{ textDecoration: "underline" }}>
                     Register here
                   </Text>

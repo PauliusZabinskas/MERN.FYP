@@ -164,12 +164,7 @@ const FileCard = ({ file }) => {
                                 value={updatedFile.owner}
                                 onChange={(e) => setUpdatedFile({ ...updatedFile, owner: e.target.value })}
                             />
-                            <Input
-                                placeholder='File'
-                                name='file'
-                                value={updatedFile.file_path}
-                                onChange={(e) => setUpdatedFile({ ...updatedFile, file_path: e.target.value })}
-                            />
+                            
                         </VStack>
                     </ModalBody>
 
