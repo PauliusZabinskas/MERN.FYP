@@ -31,76 +31,80 @@ import {
       setFormData({ ...formData, [name]: value });
     };
   
+    // In your RegisterPage.jsx, update the fetch call:
+    // In your handleSubmit function:
+
     const handleSubmit = async (e) => {
-      e.preventDefault();
-      
-      // Validation
-      if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+        e.preventDefault();
+        
+        // Validation
+        if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
         toast({
-          title: "Error",
-          description: "Please fill in all fields",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
+            title: "Error",
+            description: "Please fill in all fields",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
         });
         return;
-      }
-      
-      if (formData.password !== formData.confirmPassword) {
+        }
+        
+        if (formData.password !== formData.confirmPassword) {
         toast({
-          title: "Error",
-          description: "Passwords do not match",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
+            title: "Error",
+            description: "Passwords do not match",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
         });
         return;
-      }
-      
-      setIsSubmitting(true);
-      
-      try {
-        // Replace with your actual registration API call
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: {
+        }
+        
+        setIsSubmitting(true);
+        
+        try {
+        // Use absolute URL with your backend port (5000)
+        const response = await fetch("http://localhost:5000/api/auth/register", {
+            method: "POST",
+            headers: {
             "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: formData.name,
+            },
+            body: JSON.stringify({
+            username: formData.name,
             email: formData.email,
             password: formData.password
-          }),
+            }),
+            credentials: 'include'
         });
         
         const data = await response.json();
         
         if (!response.ok) {
-          throw new Error(data.message || "Registration failed");
+            throw new Error(data.message || "Registration failed");
         }
         
         toast({
-          title: "Account created",
-          description: "You've successfully registered! You can now log in.",
-          status: "success",
-          duration: 5000,
-          isClosable: true,
+            title: "Account created",
+            description: "You've successfully registered! You can now log in.",
+            status: "success",
+            duration: 5000,
+            isClosable: true,
         });
         
         // Redirect to login page
         navigate("/login");
         
-      } catch (error) {
+        } catch (error) {
         toast({
-          title: "Error",
-          description: error.message || "Something went wrong",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
+            title: "Error",
+            description: error.message || "Something went wrong",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
         });
-      } finally {
+        } finally {
         setIsSubmitting(false);
-      }
+        }
     };
   
     return (

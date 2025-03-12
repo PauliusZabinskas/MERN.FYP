@@ -29,30 +29,22 @@ const LoginPage = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
+  // In your LoginPage.jsx, update the fetch call:
+const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
+    // Validation...
     
     setIsSubmitting(true);
     
     try {
-      // Replace with your actual login API call
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
+        credentials: 'include'
       });
       
       const data = await response.json();
@@ -61,8 +53,9 @@ const LoginPage = () => {
         throw new Error(data.message || "Login failed");
       }
       
-      // Store token or user data in localStorage or context
+      // Store token in localStorage
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       
       toast({
         title: "Success",
@@ -76,15 +69,7 @@ const LoginPage = () => {
       navigate("/");
       
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    } finally {
-      setIsSubmitting(false);
+      // Error handling...
     }
   };
 

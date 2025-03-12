@@ -1,16 +1,15 @@
-// server.js
 import express from 'express';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import fileRoutes from './routes/file.api.js';
-// import fileStoreRouter from './routes/store.file.api.js';
 import ipfsRoutes from './routes/ipfs.store.api.js';
+import authRoute from './routes/auth.route.js';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
 const app = express();
-app.use(express.json());
 
 // Middlewares
 app.use(cors({
@@ -19,17 +18,32 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
-app.get('/', (req, res) => {
-  res.send('Hello World');
-});
-
+// Routes
+app.use('/api/auth', authRoute);
 app.use('/api/file-details', fileRoutes);
-// app.use('/api/file-store', fileStoreRouter);
 app.use('/api/ipfs', ipfsRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  connectDB();
-  console.log('Server is running on http://localhost:' + PORT);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!'
+  });
 });
+
+const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB before starting the server
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Database connection failed:', error);
+    process.exit(1);
+  });
