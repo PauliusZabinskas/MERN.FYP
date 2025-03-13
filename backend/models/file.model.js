@@ -17,6 +17,10 @@ const fileSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  sharedWith: {
+    type: String,
+    required: false,
+  },
 }, {
     timestamps: true,
 });

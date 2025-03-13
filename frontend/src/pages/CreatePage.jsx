@@ -8,30 +8,60 @@ const CreatePage = () => {
   const [newFile, setNewFile] = useState({
     name: "",
     description: "",
-    owner: "",
+    owner: "", // We'll populate this automatically
     file: null
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const toast = useToast();
   const navigate = useNavigate();
   const { createFile } = usefileAPI();
   
-  // Auto-populate the owner field with the logged-in user's username
+  // Fetch the current user on component mount
   useEffect(() => {
-    const userJson = localStorage.getItem("user");
-    if (userJson) {
+    const fetchUser = async () => {
       try {
-        const user = JSON.parse(userJson);
-        if (user && user.username) {
-          setNewFile(prev => ({ ...prev, owner: user.username }));
+        // Get user from verification API
+        const response = await fetch("/api/auth/verify", {
+          credentials: "include"
+        });
+        
+        const data = await response.json();
+        
+        if (data.authenticated && data.user) {
+          setCurrentUser(data.user);
+          // Set the owner automatically using the user's email
+          setNewFile(prev => ({ 
+            ...prev, 
+            owner: data.user.email 
+          }));
+        } else {
+          // If not authenticated, redirect to login
+          toast({
+            title: "Authentication Required",
+            description: "Please login to create files",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+          navigate("/login");
         }
       } catch (error) {
-        console.error("Error parsing user data:", error);
+        console.error("Error fetching current user:", error);
+        toast({
+          title: "Error",
+          description: "Could not verify your identity",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       }
-    }
-  }, []);
+    };
+    
+    fetchUser();
+  }, [navigate, toast]);
 
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -59,10 +89,10 @@ const CreatePage = () => {
       return;
     }
 
-    if (!newFile.description || !newFile.owner) {
+    if (!newFile.description) {
       toast({
         title: "Missing information",
-        description: "Please fill in all fields.",
+        description: "Please provide a file description.",
         status: "error",
         isClosable: true,
       });
@@ -85,7 +115,12 @@ const CreatePage = () => {
         throw new Error(message);
       }
       
-      setNewFile({ name: "", description: "", owner: "", file: null });
+      setNewFile(prev => ({ 
+        name: "", 
+        description: "", 
+        owner: currentUser?.email || "", // Keep the owner email for future uploads
+        file: null 
+      }));
       setSelectedFile(null);
       toast({
         title: "File uploaded successfully",
@@ -140,11 +175,13 @@ const CreatePage = () => {
               value={newFile.description}
               onChange={(e) => setNewFile({ ...newFile, description: e.target.value })}
             />
+            {/* Display owner as read-only input */}
             <Input
               placeholder='File owner'
               name='owner'
               value={newFile.owner}
-              onChange={(e) => setNewFile({ ...newFile, owner: e.target.value })}
+              isReadOnly
+              bgColor="gray.100"
             />
             <Dropzone onDrop={onDrop} accept=".txt">
               {({ getRootProps, getInputProps }) => (
