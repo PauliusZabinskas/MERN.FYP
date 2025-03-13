@@ -29,6 +29,8 @@ const LoginPage = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // In the handleSubmit function, remove the JWT storage:
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -47,7 +49,7 @@ const LoginPage = () => {
     
     try {
       console.log("Logging in with:", formData.email);
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,8 +64,10 @@ const LoginPage = () => {
         throw new Error(data.message || "Login failed");
       }
       
-      // Store token in localStorage
-      localStorage.setItem("token", data.token);
+      // Remove token storage in localStorage
+      // localStorage.setItem("token", data.token);
+      
+      // Keep user info storage since it doesn't contain sensitive token data
       localStorage.setItem("user", JSON.stringify(data.user));
       
       // Force update for components listening to localStorage

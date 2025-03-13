@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Box, Button, Container, Heading, Input, useColorModeValue, useToast, VStack } from "@chakra-ui/react";
+import React, { useState, useEffect } from "react";
+import { Box, Button, Container, Heading, Input, useColorModeValue, useToast, VStack, Text } from "@chakra-ui/react";
 import Dropzone from "react-dropzone";
 import { usefileAPI } from "../fetchAPI/fetch.file.js";
-import { encryptFile } from "../enc.dec/encryption.js";
+import { useNavigate } from "react-router-dom";
 
 const CreatePage = () => {
   const [newFile, setNewFile] = useState({
@@ -15,7 +15,23 @@ const CreatePage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToast();
+  const navigate = useNavigate();
   const { createFile } = usefileAPI();
+  
+  // Auto-populate the owner field with the logged-in user's username
+  useEffect(() => {
+    const userJson = localStorage.getItem("user");
+    if (userJson) {
+      try {
+        const user = JSON.parse(userJson);
+        if (user && user.username) {
+          setNewFile(prev => ({ ...prev, owner: user.username }));
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }, []);
 
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -56,6 +72,12 @@ const CreatePage = () => {
     setIsUploading(true);
     
     try {
+      console.log("Creating file with data:", { 
+        name: newFile.name,
+        description: newFile.description,
+        owner: newFile.owner
+      });
+      
       // Use the store's createFile function
       const { success, message } = await createFile(newFile);
       
@@ -71,13 +93,33 @@ const CreatePage = () => {
         status: "success",
         isClosable: true,
       });
+      
+      // Redirect to home page to see the new file
+      navigate("/home");
     } catch (error) {
-      toast({
-        title: "Upload failed",
-        description: error.message || "Something went wrong",
-        status: "error",
-        isClosable: true,
-      });
+      console.error("Upload error:", error);
+      
+      // Check if it's an auth error
+      if (error.message && (
+        error.message.includes("Authentication") || 
+        error.message.includes("Unauthorized") ||
+        error.message.includes("token")
+      )) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in again to continue",
+          status: "error",
+          isClosable: true,
+        });
+        navigate("/login");
+      } else {
+        toast({
+          title: "Upload failed",
+          description: error.message || "Something went wrong",
+          status: "error",
+          isClosable: true,
+        });
+      }
     } finally {
       setIsUploading(false);
     }

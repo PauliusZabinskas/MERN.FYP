@@ -1,6 +1,7 @@
 import User from "../models/userModel.js";
 import { createSecretToken } from "../util/secretToken.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken"; // Add this import for the Verify function
 
 export const Signup = async (req, res, next) => {
     try {
@@ -26,7 +27,7 @@ export const Signup = async (req, res, next) => {
       const token = createSecretToken(user._id);
       
       res.cookie("token", token, {
-        httpOnly: false,
+        httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
@@ -50,6 +51,7 @@ export const Signup = async (req, res, next) => {
     }
   };
 
+  
   export const Login = async (req, res) => {
     try {
       console.log("Login request:", req.body);
@@ -85,7 +87,7 @@ export const Signup = async (req, res, next) => {
       
       // Set cookie
       res.cookie("token", token, {
-        httpOnly: false, // Set to true in production for security
+        httpOnly: true, // Set to true for security
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
@@ -98,8 +100,7 @@ export const Signup = async (req, res, next) => {
           id: user._id,
           email: user.email,
           username: user.username,
-        },
-        token
+        }
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -107,5 +108,68 @@ export const Signup = async (req, res, next) => {
         success: false,
         message: "Internal server error"
       });
+    }
+  };
+
+  export const Logout = async (req, res) => {
+    try {
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      });
+      
+      res.status(200).json({
+        success: true,
+        message: "Logged out successfully"
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Logout failed"
+      });
+    }
+  };
+
+  export const Verify = async (req, res) => {
+    try {
+      const token = req.cookies.token;
+      
+      if (!token) {
+        return res.json({ authenticated: false });
+      }
+      
+      // Verify the token
+      jwt.verify(token, process.env.TOKEN_KEY, async (err, decoded) => {
+        if (err) {
+          console.log("Token verification failed:", err.message);
+          return res.json({ authenticated: false });
+        }
+        
+        try {
+          const user = await User.findById(decoded.id);
+          if (!user) {
+            console.log("User not found for token");
+            return res.json({ authenticated: false });
+          }
+          
+          console.log("User authenticated:", user.email);
+          return res.json({ 
+            authenticated: true,
+            user: {
+              id: user._id,
+              email: user.email,
+              username: user.username
+            }
+          });
+        } catch (error) {
+          console.error("Database error during verification:", error);
+          return res.json({ authenticated: false });
+        }
+      });
+    } catch (error) {
+      console.error("Verification error:", error);
+      return res.json({ authenticated: false });
     }
   };

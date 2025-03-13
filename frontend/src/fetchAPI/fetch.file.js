@@ -10,12 +10,9 @@ export const usefileAPI = create((set) => ({
         if (!newFile.description || !newFile.owner || !newFile.file) {
             return { success: false, message: "Please fill in all fields." };
         }
-
+    
         try {
             console.log("Starting file encryption process...");
-            
-            // Get authentication token
-            const token = localStorage.getItem("token");
             
             // Encrypt the file before uploading
             const encryptedFile = await encryptFile(newFile.file);
@@ -28,24 +25,35 @@ export const usefileAPI = create((set) => ({
             formData.append('file', encryptedFile);  // Use encrypted file
             
             console.log("Uploading encrypted file...");
-            const res = await fetch("/api/file-details", {
-                method: "POST",
+            
+            // Use axios instead of fetch for consistent handling with credentials
+            const response = await axios.post("/api/file-details", formData, {
+                withCredentials: true, // This will send cookies automatically
                 headers: {
-                    "Authorization": token ? `Bearer ${token}` : undefined
+                    'Content-Type': 'multipart/form-data',
                 },
-                body: formData,
-                credentials: 'include'
             });
-
-            const data = await res.json();
+    
+            // Axios automatically throws for non-2xx responses, so if we get here the request succeeded
+            const data = response.data;
+            
             if (!data.success) {
                 return { success: false, message: data.message };
             }
-
+    
             set((state) => ({ files: [...state.files, data.data] }));
             return { success: true, message: "Encrypted file uploaded successfully" };
         } catch (error) {
             console.error("Error in createFile:", error);
+            
+            // Check if it's a response error with a message
+            if (error.response && error.response.data) {
+                return { 
+                    success: false, 
+                    message: error.response.data.message || `Server returned ${error.response.status}`
+                };
+            }
+            
             return { success: false, message: error.message || "Failed to encrypt and upload file" };
         }
     },
@@ -54,15 +62,9 @@ export const usefileAPI = create((set) => ({
         try {
             console.log("Starting file download process for:", file.name);
             
-            // Get authentication token
-            const token = localStorage.getItem("token");
-            
-            const response = await axios.get(`http://localhost:5000/api/ipfs/download/${file.cid}`, {
+            const response = await axios.get(`/api/ipfs/download/${file.cid}`, {
                 responseType: 'blob',
-                withCredentials: true,
-                headers: {
-                    "Authorization": token ? `Bearer ${token}` : undefined
-                }
+                withCredentials: true, // This will send cookies automatically
             });
                 
             if (!response.data) {
@@ -96,14 +98,9 @@ export const usefileAPI = create((set) => ({
     
     fetchFiles: async () => {
         try {
-            // Get authentication token
-            const token = localStorage.getItem("token");
             
             const res = await fetch("/api/file-details", {
-                headers: {
-                    "Authorization": token ? `Bearer ${token}` : undefined
-                },
-                credentials: 'include'
+                credentials: 'include' // This will send cookies automatically
             });
             
             if (!res.ok) {
@@ -122,15 +119,10 @@ export const usefileAPI = create((set) => ({
     
     deleteFile: async (id) => {
         try {
-            // Get authentication token
-            const token = localStorage.getItem("token");
-            
+           
             const res = await fetch(`/api/file-details/${id}`, {
                 method: "DELETE",
-                headers: {
-                    "Authorization": token ? `Bearer ${token}` : undefined
-                },
-                credentials: 'include'
+                credentials: 'include' // This will send cookies automatically
             });
             
             const data = await res.json();
@@ -147,17 +139,14 @@ export const usefileAPI = create((set) => ({
     
     updateFile: async (id, updatedFile) => {
         try {
-            // Get authentication token
-            const token = localStorage.getItem("token");
-            
+           
             const res = await fetch(`/api/file-details/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": token ? `Bearer ${token}` : undefined
                 },
                 body: JSON.stringify(updatedFile),
-                credentials: 'include'
+                credentials: 'include' // This will send cookies automatically
             });
             
             const data = await res.json();

@@ -64,7 +64,7 @@ import {
         
         try {
         // Use absolute URL with your backend port (5000)
-        const response = await fetch("http://localhost:5000/api/auth/register", {
+        const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: {
             "Content-Type": "application/json",

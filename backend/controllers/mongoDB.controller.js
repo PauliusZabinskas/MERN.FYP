@@ -49,7 +49,10 @@ export const createFileDetails = async (req, res) => {
     const formData = new FormData();
     formData.append('file', req.file.buffer, req.file.originalname);
 
-    const ipfsResponse = await axios.post('http://localhost:5000/api/ipfs', formData, {
+    console.log('Sending file to IPFS:', req.file.originalname);
+    
+    // Fix the IPFS endpoint to include the "add" action
+    const ipfsResponse = await axios.post('http://localhost:5001/api/v0/add', formData, {
       headers: {
         ...formData.getHeaders(),
       },
@@ -58,7 +61,7 @@ export const createFileDetails = async (req, res) => {
     console.log('IPFS response:', ipfsResponse.data);
 
     // Extract the CID from the IPFS response
-    const fileCid = ipfsResponse.data.Hash || ipfsResponse.data.cid || ipfsResponse.data.Cid;
+    const fileCid = ipfsResponse.data.Hash || ipfsResponse.data.Cid;
 
     if (!fileCid) {
       return res.status(500).send({ message: 'Failed to retrieve CID from IPFS response' });
