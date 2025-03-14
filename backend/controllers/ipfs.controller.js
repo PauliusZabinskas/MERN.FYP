@@ -40,7 +40,7 @@ export const getFile = async (req, res) => {
   try {
     const { cid } = req.params;
     
-    // Check if file exists and verify ownership
+    // Check if file exists
     const file = await File.findOne({ cid });
     
     if (!file) {
@@ -50,15 +50,18 @@ export const getFile = async (req, res) => {
       });
     }
     
-    // Check if current user is the owner
-    if (file.owner !== req.user.email) {
+    // Check if current user is the owner OR is in sharedWith array
+    const isOwner = file.owner === req.user.email;
+    const isShared = file.sharedWith.includes(req.user.email);
+    
+    if (!isOwner && !isShared) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied: You do not own this file'
+        message: 'Access denied: You do not have permission to access this file'
       });
     }
 
-    // If owner, retrieve the file from IPFS
+    // If owner or has access, retrieve the file from IPFS
     const response = await axios.post(`${ipfsEndpoint}/cat`, null, {
       params: { arg: cid },
       responseType: 'arraybuffer',
@@ -79,7 +82,7 @@ export const downloadFile = async (req, res) => {
   try {
     const { cid } = req.params;
     
-    // Check if file exists and verify ownership
+    // Check if file exists
     const file = await File.findOne({ cid });
     
     if (!file) {
@@ -89,15 +92,18 @@ export const downloadFile = async (req, res) => {
       });
     }
     
-    // Check if current user is the owner
-    if (file.owner !== req.user.email) {
+    // Check if current user is the owner OR is in sharedWith array
+    const isOwner = file.owner === req.user.email;
+    const isShared = file.sharedWith.includes(req.user.email);
+    
+    if (!isOwner && !isShared) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied: You do not own this file'
+        message: 'Access denied: You do not have permission to download this file'
       });
     }
 
-    // If owner, download the file from IPFS
+    // If owner or has access, download the file from IPFS
     const response = await axios.post(`${ipfsEndpoint}/cat`, null, {
       params: { arg: cid },
       responseType: 'arraybuffer',

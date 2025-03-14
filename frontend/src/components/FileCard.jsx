@@ -1,4 +1,5 @@
 import { DeleteIcon, EditIcon, DownloadIcon } from "@chakra-ui/icons";
+import { FaShare } from "react-icons/fa"; // Import Share icon from react-icons
 import {
     Box,
     Button,
@@ -13,24 +14,34 @@ import {
     ModalFooter,
     ModalHeader,
     ModalOverlay,
+    Tag,
     Text,
     useColorModeValue,
     useDisclosure,
     useToast,
     VStack,
+    Tooltip,
+    Badge,
 } from "@chakra-ui/react";
 import { usefileAPI } from "../fetchAPI/fetch.file.js";
-import { useState } from "react";
+import { useState } from "react"
 
 const FileCard = ({ file }) => {
     const [updatedFile, setUpdatedFile] = useState(file);
+    const [shareEmails, setShareEmails] = useState("");
+    const [isOwner, setIsOwner] = useState(file.accessType === 'owner');
 
     const textColor = useColorModeValue("gray.600", "gray.200");
     const bg = useColorModeValue("white", "gray.800");
 
-    const { deleteFile, updateFile, downloadFile } = usefileAPI();
+    const { deleteFile, updateFile, downloadFile, shareFile, unshareFile } = usefileAPI();
     const toast = useToast();
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const { 
+      isOpen: isShareOpen, 
+      onOpen: onShareOpen, 
+      onClose: onShareClose 
+    } = useDisclosure();
 
     const handleDeleteFile = async (id) => {
         const { success, message } = await deleteFile(id);
@@ -102,6 +113,66 @@ const FileCard = ({ file }) => {
         }
     };
 
+    const handleShareFile = async () => {
+        if (!shareEmails.trim()) {
+            toast({
+                title: "Error",
+                description: "Please enter at least one email",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        }
+
+        // Split by commas and trim whitespace
+        const emailList = shareEmails.split(',').map(email => email.trim());
+        
+        const { success, message } = await shareFile(file._id, emailList);
+        
+        if (success) {
+            toast({
+                title: "Success",
+                description: "File shared successfully",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+            setShareEmails("");
+            onShareClose();
+        } else {
+            toast({
+                title: "Error",
+                description: message,
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleRemoveShare = async (email) => {
+        const { success, message } = await unshareFile(file._id, [email]);
+        
+        if (success) {
+            toast({
+                title: "Success",
+                description: `Sharing removed for ${email}`,
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        } else {
+            toast({
+                title: "Error",
+                description: message,
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
+
     return (
         <Box
             shadow='lg'
@@ -113,37 +184,91 @@ const FileCard = ({ file }) => {
         >
 
             <Box p={4}>
-                <Heading as='h3' size='md' mb={2}>
-                    {"Name: " + file.name}
-                </Heading>
+                <HStack justify="space-between" mb={2}>
+                    <Heading as='h3' size='md'>
+                        {file.name}
+                    </Heading>
+                    {!isOwner && (
+                        <Badge colorScheme="purple">Shared with me</Badge>
+                    )}
+                </HStack>
 
-                <Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-                    {"Description: " + file.description}
+                <Text fontWeight='bold' fontSize='sm' color={textColor} mb={2}>
+                    Description: {file.description}
                 </Text>
 
-                <Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-                    {"Owner: " + file.owner}
+                <Text fontSize='sm' color={textColor} mb={2}>
+                    Owner: {file.owner}
                 </Text>
 
-                <Text fontWeight='bold' fontSize='xxl' color={textColor} mb={4}>
-                    {"File: " + file.cid}
-                </Text>
+                {isOwner && file.sharedWith && file.sharedWith.length > 0 && (
+                    <Box mb={4}>
+                        <Text fontSize='sm' fontWeight="bold" mb={1}>Shared with:</Text>
+                        <HStack spacing={2} flexWrap="wrap">
+                            {file.sharedWith.map((email, index) => (
+                                <Tag 
+                                    size="sm" 
+                                    key={index}
+                                    colorScheme="blue"
+                                >
+                                    {email}
+                                    <Button
+                                        size="xs"
+                                        ml={1}
+                                        onClick={() => handleRemoveShare(email)}
+                                    >
+                                        ✕
+                                    </Button>
+                                </Tag>
+                            ))}
+                        </HStack>
+                    </Box>
+                )}
 
-                <HStack spacing={2}>
-                    <IconButton icon={<EditIcon />} onClick={onOpen} colorScheme='blue' />
-                    <IconButton
-                        icon={<DeleteIcon />}
-                        onClick={() => handleDeleteFile(file._id)}
-                        colorScheme='red'
-                    />
-                    <IconButton
-                        icon={<DownloadIcon />}
-                        onClick={handleDownloadFile}
-                        colorScheme='green'
-                    />
+                <HStack spacing={2} mt={4}>
+                    {isOwner && (
+                        <>
+                            <Tooltip label="Edit file">
+                                <IconButton 
+                                    icon={<EditIcon />} 
+                                    onClick={onOpen} 
+                                    colorScheme='blue' 
+                                    aria-label="Edit file"
+                                />
+                            </Tooltip>
+                            
+                            <Tooltip label="Delete file">
+                                <IconButton
+                                    icon={<DeleteIcon />}
+                                    onClick={() => handleDeleteFile(file._id)}
+                                    colorScheme='red'
+                                    aria-label="Delete file"
+                                />
+                            </Tooltip>
+                            
+                            <Tooltip label="Share file">
+                                <IconButton
+                                    icon={<FaShare />} // Using FaShare instead of ShareIcon
+                                    onClick={onShareOpen}
+                                    colorScheme='green'
+                                    aria-label="Share file"
+                                />
+                            </Tooltip>
+                        </>
+                    )}
+                    
+                    <Tooltip label="Download file">
+                        <IconButton
+                            icon={<DownloadIcon />}
+                            onClick={handleDownloadFile}
+                            colorScheme={isOwner ? 'green' : 'blue'}
+                            aria-label="Download file"
+                        />
+                    </Tooltip>
                 </HStack>
             </Box>
 
+            {/* Edit Modal */}
             <Modal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay />
 
@@ -158,13 +283,6 @@ const FileCard = ({ file }) => {
                                 value={updatedFile.description}
                                 onChange={(e) => setUpdatedFile({ ...updatedFile, description: e.target.value })}
                             />
-                            <Input
-                                placeholder='File Owner'
-                                name='owner'
-                                value={updatedFile.owner}
-                                onChange={(e) => setUpdatedFile({ ...updatedFile, owner: e.target.value })}
-                            />
-                            
                         </VStack>
                     </ModalBody>
 
@@ -177,6 +295,63 @@ const FileCard = ({ file }) => {
                             Update
                         </Button>
                         <Button variant='ghost' onClick={onClose}>
+                            Cancel
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Share Modal */}
+            <Modal isOpen={isShareOpen} onClose={onShareClose}>
+                <ModalOverlay />
+
+                <ModalContent>
+                    <ModalHeader>Share File</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        <VStack spacing={4}>
+                            <Text>Enter email addresses to share this file with (comma separated)</Text>
+                            <Input
+                                placeholder='user@example.com, user2@example.com'
+                                value={shareEmails}
+                                onChange={(e) => setShareEmails(e.target.value)}
+                            />
+                            
+                            {file.sharedWith && file.sharedWith.length > 0 && (
+                                <Box w="100%">
+                                    <Text fontWeight="bold" mb={2}>Currently shared with:</Text>
+                                    <HStack spacing={2} flexWrap="wrap">
+                                        {file.sharedWith.map((email, index) => (
+                                            <Tag 
+                                                size="sm" 
+                                                key={index}
+                                                colorScheme="blue"
+                                            >
+                                                {email}
+                                                <Button
+                                                    size="xs"
+                                                    ml={1}
+                                                    onClick={() => handleRemoveShare(email)}
+                                                >
+                                                    ✕
+                                                </Button>
+                                            </Tag>
+                                        ))}
+                                    </HStack>
+                                </Box>
+                            )}
+                        </VStack>
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button
+                            colorScheme='blue'
+                            mr={3}
+                            onClick={handleShareFile}
+                        >
+                            Share
+                        </Button>
+                        <Button variant='ghost' onClick={onShareClose}>
                             Cancel
                         </Button>
                     </ModalFooter>

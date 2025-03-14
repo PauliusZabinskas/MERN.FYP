@@ -9,15 +9,29 @@ export const getAllFileDetails = async (req, res) => {
     // Get the user from auth middleware
     const user = req.user;
     
-    // Find only files where the owner matches the user's email
-    const files = await File.find({ owner: user.email });
+    // Find files where user is the owner OR where user's email is in the sharedWith array
+    const files = await File.find({ 
+      $or: [
+        { owner: user.email },
+        { sharedWith: user.email }
+      ]
+    });
     
-    res.status(200).json({ success: true, data: files });
+    // Mark which files are owned vs shared
+    const filesWithAccess = files.map(file => {
+      const isOwner = file.owner === user.email;
+      return {
+        ...file._doc,
+        accessType: isOwner ? 'owner' : 'shared'
+      };
+    });
+    
+    res.status(200).json({ success: true, data: filesWithAccess });
   } catch (error) {
     console.log("Failed to fetch files", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 // Verify ownership before returning file details
 export const getFileDetails = async (req, res) => {
@@ -34,20 +48,29 @@ export const getFileDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: 'File not found' });
     }
     
-    // Check if the current user is the owner
-    if (file.owner !== req.user.email) {
+    // Check if the current user is the owner OR if they're in the sharedWith array
+    const isOwner = file.owner === req.user.email;
+    const isShared = file.sharedWith.includes(req.user.email);
+    
+    if (!isOwner && !isShared) {
       return res.status(403).json({ 
         success: false, 
-        message: 'Access denied: You do not own this file' 
+        message: 'Access denied: You do not have permission to access this file' 
       });
     }
     
-    res.status(200).json({ success: true, data: file });
+    // Add accessType to response
+    const fileWithAccess = {
+      ...file._doc,
+      accessType: isOwner ? 'owner' : 'shared'
+    };
+    
+    res.status(200).json({ success: true, data: fileWithAccess });
   } catch (error) {
     console.log("Failed to fetch a file", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 // Set the owner automatically when creating a file
 export const createFileDetails = async (req, res) => {
@@ -177,3 +200,123 @@ export const deleteFileDetails = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export const shareFile = async (req, res) => {
+  const { id } = req.params;
+  const { emails } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid file ID' });
+  }
+
+  if (!emails || !Array.isArray(emails)) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Please provide an array of email addresses' 
+    });
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const invalidEmails = emails.filter(email => !emailRegex.test(email));
+  
+  if (invalidEmails.length > 0) {
+    return res.status(400).json({ 
+      success: false, 
+      message: `Invalid email format: ${invalidEmails.join(', ')}` 
+    });
+  }
+
+  try {
+    const file = await File.findById(id);
+
+    if (!file) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'File not found' 
+      });
+    }
+
+    // Only the owner can share the file
+    if (file.owner !== req.user.email) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Only the file owner can share this file' 
+      });
+    }
+
+    // Add new emails, avoid duplicates
+    const updatedSharedWith = [...new Set([...file.sharedWith, ...emails])];
+    
+    const updatedFile = await File.findByIdAndUpdate(
+      id, 
+      { sharedWith: updatedSharedWith }, 
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'File shared successfully', 
+      data: updatedFile 
+    });
+
+  } catch (error) {
+    console.log("Failed to share file", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Remove sharing for specific users
+export const removeSharing = async (req, res) => {
+  const { id } = req.params;
+  const { emails } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid file ID' });
+  }
+
+  if (!emails || !Array.isArray(emails)) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Please provide an array of email addresses' 
+    });
+  }
+
+  try {
+    const file = await File.findById(id);
+
+    if (!file) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'File not found' 
+      });
+    }
+
+    // Only the owner can modify sharing
+    if (file.owner !== req.user.email) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Only the file owner can modify sharing' 
+      });
+    }
+
+    // Remove the specified emails
+    const updatedSharedWith = file.sharedWith.filter(email => !emails.includes(email));
+    
+    const updatedFile = await File.findByIdAndUpdate(
+      id, 
+      { sharedWith: updatedSharedWith }, 
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Sharing permissions removed successfully', 
+      data: updatedFile 
+    });
+
+  } catch (error) {
+    console.log("Failed to remove sharing", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

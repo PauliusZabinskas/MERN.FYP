@@ -18,8 +18,8 @@ const fileSchema = new mongoose.Schema({
     required: false,
   },
   sharedWith: {
-    type: String,
-    required: false,
+    type: [String],
+    default: [],
   },
 }, {
     timestamps: true,

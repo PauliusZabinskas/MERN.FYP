@@ -5,6 +5,58 @@ import axios from 'axios';
 export const usefileAPI = create((set) => ({
     files: [],
     setFile: (files) => set({ files }),
+
+    shareFile: async (id, emails) => {
+        try {
+            const res = await fetch(`/api/file-details/${id}/share`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ emails }),
+                credentials: 'include'
+            });
+            
+            const data = await res.json();
+            if (!data.success) return { success: false, message: data.message };
+    
+            // Update the file in state with new sharing settings
+            set((state) => ({
+                files: state.files.map((file) => (file._id === id ? data.data : file)),
+            }));
+            
+            return { success: true, message: "File shared successfully" };
+        } catch (error) {
+            console.error("Error sharing file:", error);
+            return { success: false, message: error.message || "Failed to share file" };
+        }
+    },
+    
+    unshareFile: async (id, emails) => {
+        try {
+            const res = await fetch(`/api/file-details/${id}/unshare`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ emails }),
+                credentials: 'include'
+            });
+            
+            const data = await res.json();
+            if (!data.success) return { success: false, message: data.message };
+    
+            // Update the file in state with new sharing settings
+            set((state) => ({
+                files: state.files.map((file) => (file._id === id ? data.data : file)),
+            }));
+            
+            return { success: true, message: "Sharing permission removed successfully" };
+        } catch (error) {
+            console.error("Error removing share:", error);
+            return { success: false, message: error.message || "Failed to remove sharing permission" };
+        }
+    },
     
     createFile: async (newFile) => {
         if (!newFile.description || !newFile.owner || !newFile.file) {
