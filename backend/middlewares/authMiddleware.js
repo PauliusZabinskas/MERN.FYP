@@ -6,10 +6,6 @@ dotenv.config();
 
 export const userVerification = (req, res, next) => {
   try {
-    console.log("Auth middleware running");
-    console.log("Headers:", req.headers);
-    console.log("Cookies:", req.cookies);
-    
     // Check cookie first
     const cookieToken = req.cookies.token;
 
@@ -21,8 +17,6 @@ export const userVerification = (req, res, next) => {
     
     // Use whichever token is available
     const token = cookieToken || headerToken;
-    
-    console.log("Token found:", token ? "Yes" : "No");
     
     if (!token) {
       return res.status(401).json({ 
@@ -43,9 +37,9 @@ export const userVerification = (req, res, next) => {
       try {
         const user = await User.findById(data.id);
         if (user) {
-          console.log("User authenticated:", user.email);
-          req.user = user; // Attach user to request
-          next(); // Call next middleware
+          // Attach user to request for ownership checks in controllers
+          req.user = user;
+          next();
         } else {
           return res.status(401).json({ 
             status: false, 
