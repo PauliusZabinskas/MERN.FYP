@@ -33,7 +33,7 @@ export const usefileAPI = create((set) => ({
     },
     
     // New function to generate a share token
-    generateShareToken: async (fileId, recipient, permissions = ["read", "download"]) => {
+    generateShareToken: async (fileId, recipient, permissions = ["read", "download"], expiresIn) => {
         try {
             const res = await fetch('/api/share', {
                 method: 'POST',
@@ -43,7 +43,8 @@ export const usefileAPI = create((set) => ({
                 body: JSON.stringify({ 
                     fileId,
                     recipient,
-                    permissions
+                    permissions,
+                    expiresIn  // Pass the expiration time to the backend
                 }),
                 credentials: 'include'
             });
@@ -96,7 +97,8 @@ export const usefileAPI = create((set) => ({
                     permissions: data.permissions,
                     owner: data.owner,
                     fileName: data.fileName,
-                    cid: data.cid  // Include the CID from the response
+                    cid: data.cid,
+                    expiresAt: data.expiresAt // Include the expiration timestamp
                 },
                 message: 'Share token is valid'
             };
@@ -110,13 +112,14 @@ export const usefileAPI = create((set) => ({
     },
     
     // New function to create and copy a share link
-    createShareLink: async (fileId, email, permissions = ["read", "download"]) => {
+    createShareLink: async (fileId, email, permissions = ["read", "download"], expiresIn) => {
         try {
             // Generate a token
             const { success, token, message } = await usefileAPI.getState().generateShareToken(
                 fileId, 
                 email, 
-                permissions
+                permissions,
+                expiresIn
             );
             
             if (!success || !token) {

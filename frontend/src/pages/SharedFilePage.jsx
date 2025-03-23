@@ -13,16 +13,43 @@ import {
     AlertIcon,
     AlertTitle,
     AlertDescription,
+    Badge,
+    HStack,
 } from '@chakra-ui/react';
 import { usefileAPI } from '../fetchAPI/fetch.file.js';
+import { TimeIcon } from '@chakra-ui/icons';
 
 const SharedFilePage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [fileInfo, setFileInfo] = useState(null);
     const [error, setError] = useState(null);
+    const [expiryInfo, setExpiryInfo] = useState(null);
     const location = useLocation();
     const toast = useToast();
     const { verifyShareToken, downloadFile } = usefileAPI();
+
+    // Calculate time remaining in a human-readable format
+    const calculateTimeRemaining = (expiryTime) => {
+        if (!expiryTime) return null;
+        
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = expiryTime - now;
+        
+        if (timeLeft <= 0) return "Expired";
+        
+        // Convert to appropriate units
+        const days = Math.floor(timeLeft / (24 * 60 * 60));
+        const hours = Math.floor((timeLeft % (24 * 60 * 60)) / (60 * 60));
+        const minutes = Math.floor((timeLeft % (60 * 60)) / 60);
+        
+        if (days > 0) {
+            return `${days} day${days > 1 ? 's' : ''} ${hours} hr${hours > 1 ? 's' : ''}`;
+        } else if (hours > 0) {
+            return `${hours} hr${hours > 1 ? 's' : ''} ${minutes} min${minutes > 1 ? 's' : ''}`;
+        } else {
+            return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+        }
+    };
 
     // Extract token and recipient from URL
     useEffect(() => {
@@ -49,6 +76,14 @@ const SharedFilePage = () => {
                     token,
                     recipient
                 });
+                
+                // Set expiry information if available
+                if (result.fileInfo.expiresAt) {
+                    setExpiryInfo({
+                        expiresAt: result.fileInfo.expiresAt,
+                        timeRemaining: calculateTimeRemaining(result.fileInfo.expiresAt)
+                    });
+                }
             } catch (err) {
                 setError(err.message || 'Failed to verify share link');
                 toast({
@@ -64,6 +99,21 @@ const SharedFilePage = () => {
         };
         
         checkToken();
+        
+        // Set up a timer to refresh the remaining time
+        if (fileInfo?.expiresAt) {
+            const timer = setInterval(() => {
+                setExpiryInfo(prev => {
+                    if (!prev) return null;
+                    return {
+                        ...prev,
+                        timeRemaining: calculateTimeRemaining(prev.expiresAt)
+                    };
+                });
+            }, 60000); // Update every minute
+            
+            return () => clearInterval(timer);
+        }
     }, [location, verifyShareToken, toast]);
     
     const handleDownload = async () => {
@@ -146,6 +196,15 @@ const SharedFilePage = () => {
                         <Heading size="md">{fileInfo.fileName}</Heading>
                         <Text mt={2}>Shared by: {fileInfo.owner}</Text>
                         <Text>Your access: {fileInfo.permissions.join(', ')}</Text>
+                        
+                        {expiryInfo && expiryInfo.timeRemaining && (
+                            <HStack mt={2}>
+                                <TimeIcon />
+                                <Text fontSize="sm">
+                                    Link expires in: <Badge colorScheme="blue">{expiryInfo.timeRemaining}</Badge>
+                                </Text>
+                            </HStack>
+                        )}
                         
                         <VStack mt={4} spacing={4} align="stretch">
                             {fileInfo.permissions.includes('download') && (

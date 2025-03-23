@@ -107,13 +107,17 @@ export const verifyShare = async (req, res) => {
         });
       }
       
+      // Calculate expiration time from decoded token
+      const expiresAt = decoded.exp; // JWT includes exp claim with expiration timestamp
+      
       res.status(200).json({
         success: true,
         fileId: decoded.fileId,
         permissions: decoded.permissions,
         owner: decoded.owner,
         fileName: file.name,
-        cid: file.cid  // Add the CID to the response
+        cid: file.cid,
+        expiresAt: expiresAt // Include expiration timestamp
       });
       
     } catch (error) {

@@ -20,15 +20,33 @@ import {
     IconButton,
     Box,
     Tooltip,
-    Badge
+    Badge,
+    Select
 } from '@chakra-ui/react';
 import { CopyIcon, CheckIcon } from '@chakra-ui/icons';
 import { usefileAPI } from '../fetchAPI/fetch.file.js';
+
+// Expiration options in seconds
+const expirationOptions = {
+    "5 minutes": 5 * 60,
+    "1 hour": 60 * 60,
+    "1 day": 24 * 60 * 60,
+    "7 days": 7 * 24 * 60 * 60
+};
+
+// Badge colors for different expiration times
+const expirationColors = {
+    "5 minutes": "red",
+    "1 hour": "orange",
+    "1 day": "blue",
+    "7 days": "purple"
+};
 
 const ShareModal = ({ isOpen, onClose, file }) => {
     const [email, setEmail] = useState('');
     const [shareLink, setShareLink] = useState('');
     const [permissions, setPermissions] = useState({ read: true, download: true });
+    const [expiration, setExpiration] = useState("7 days"); // Default to 7 days
     const [isLoading, setIsLoading] = useState(false);
     const [copied, setCopied] = useState(false);
     
@@ -85,8 +103,11 @@ const ShareModal = ({ isOpen, onClose, file }) => {
         if (permissions.read) permissionsArray.push('read');
         if (permissions.download) permissionsArray.push('download');
         
+        // Get the expiration time in seconds
+        const expiresIn = expirationOptions[expiration];
+        
         // Generate the share link
-        const result = await createShareLink(file._id, email, permissionsArray);
+        const result = await createShareLink(file._id, email, permissionsArray, expiresIn);
         
         setIsLoading(false);
         
@@ -188,6 +209,17 @@ const ShareModal = ({ isOpen, onClose, file }) => {
                                 </Checkbox>
                             </HStack>
                             
+                            <Text mb={2}>Link expiration:</Text>
+                            <Select 
+                                value={expiration}
+                                onChange={(e) => setExpiration(e.target.value)}
+                                mb={4}
+                            >
+                                {Object.keys(expirationOptions).map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </Select>
+                            
                             <Button 
                                 colorScheme="green" 
                                 isLoading={isLoading} 
@@ -203,7 +235,7 @@ const ShareModal = ({ isOpen, onClose, file }) => {
                         {shareLink && (
                             <Box mt={2}>
                                 <Text fontSize="sm" fontWeight="bold" mb={1}>
-                                    Share link: <Badge colorScheme="purple">Expires in 7 days</Badge>
+                                    Share link: <Badge colorScheme={expirationColors[expiration]}>Expires in {expiration}</Badge>
                                 </Text>
                                 <InputGroup>
                                     <Input 
