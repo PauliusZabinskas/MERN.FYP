@@ -6,6 +6,7 @@ import ipfsRoutes from './routes/ipfs.store.api.js';
 import authRoute from './routes/auth.route.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import shareTokenRoutes from "./routes/share.token.api.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoute);
 app.use('/api/file-details', fileRoutes);
 app.use('/api/ipfs', ipfsRoutes);
+app.use("/api/share", shareTokenRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

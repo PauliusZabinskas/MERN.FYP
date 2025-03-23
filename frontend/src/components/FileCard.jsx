@@ -25,6 +25,7 @@ import {
 } from "@chakra-ui/react";
 import { usefileAPI } from "../fetchAPI/fetch.file.js";
 import { useState } from "react"
+import ShareModal from './ShareModal';
 
 const FileCard = ({ file }) => {
     const [updatedFile, setUpdatedFile] = useState(file);
@@ -302,61 +303,11 @@ const FileCard = ({ file }) => {
             </Modal>
 
             {/* Share Modal */}
-            <Modal isOpen={isShareOpen} onClose={onShareClose}>
-                <ModalOverlay />
-
-                <ModalContent>
-                    <ModalHeader>Share File</ModalHeader>
-                    <ModalCloseButton />
-                    <ModalBody>
-                        <VStack spacing={4}>
-                            <Text>Enter email addresses to share this file with (comma separated)</Text>
-                            <Input
-                                placeholder='user@example.com, user2@example.com'
-                                value={shareEmails}
-                                onChange={(e) => setShareEmails(e.target.value)}
-                            />
-                            
-                            {file.sharedWith && file.sharedWith.length > 0 && (
-                                <Box w="100%">
-                                    <Text fontWeight="bold" mb={2}>Currently shared with:</Text>
-                                    <HStack spacing={2} flexWrap="wrap">
-                                        {file.sharedWith.map((email, index) => (
-                                            <Tag 
-                                                size="sm" 
-                                                key={index}
-                                                colorScheme="blue"
-                                            >
-                                                {email}
-                                                <Button
-                                                    size="xs"
-                                                    ml={1}
-                                                    onClick={() => handleRemoveShare(email)}
-                                                >
-                                                    ✕
-                                                </Button>
-                                            </Tag>
-                                        ))}
-                                    </HStack>
-                                </Box>
-                            )}
-                        </VStack>
-                    </ModalBody>
-
-                    <ModalFooter>
-                        <Button
-                            colorScheme='blue'
-                            mr={3}
-                            onClick={handleShareFile}
-                        >
-                            Share
-                        </Button>
-                        <Button variant='ghost' onClick={onShareClose}>
-                            Cancel
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
+            <ShareModal
+                isOpen={isShareOpen}
+                onClose={onShareClose}
+                file={file}
+            />
         </Box>
     );
 };

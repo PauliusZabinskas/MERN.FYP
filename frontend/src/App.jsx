@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/protectRoute";
+import SharedFilePage from './pages/SharedFilePage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         } />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RegisterPage />} />
+        <Route path="/shared" element={<SharedFilePage />} />
       </Routes>
     </Box>
   );

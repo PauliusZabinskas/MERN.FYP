@@ -32,6 +32,128 @@ export const usefileAPI = create((set) => ({
         }
     },
     
+    // New function to generate a share token
+    generateShareToken: async (fileId, recipient, permissions = ["read", "download"]) => {
+        try {
+            const res = await fetch('/api/share', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    fileId,
+                    recipient,
+                    permissions
+                }),
+                credentials: 'include'
+            });
+            
+            const data = await res.json();
+            
+            if (!data.success) {
+                return { 
+                    success: false, 
+                    message: data.message || 'Failed to generate share token' 
+                };
+            }
+            
+            return { 
+                success: true, 
+                token: data.shareToken,
+                message: 'Share token generated successfully' 
+            };
+        } catch (error) {
+            console.error("Error generating share token:", error);
+            return { 
+                success: false, 
+                message: error.message || "Failed to generate share token" 
+            };
+        }
+    },
+    
+    // New function to verify a share token
+    // New function to verify a share token
+    verifyShareToken: async (token) => {
+        try {
+            const res = await fetch(`/api/share/verify?token=${encodeURIComponent(token)}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            
+            const data = await res.json();
+            
+            if (!data.success) {
+                return { 
+                    success: false, 
+                    message: data.message || 'Invalid or expired share token' 
+                };
+            }
+            
+            return {
+                success: true,
+                fileInfo: {
+                    fileId: data.fileId,
+                    permissions: data.permissions,
+                    owner: data.owner,
+                    fileName: data.fileName,
+                    cid: data.cid  // Include the CID from the response
+                },
+                message: 'Share token is valid'
+            };
+        } catch (error) {
+            console.error("Error verifying share token:", error);
+            return {
+                success: false,
+                message: error.message || "Failed to verify share token"
+            };
+        }
+    },
+    
+    // New function to create and copy a share link
+    createShareLink: async (fileId, email, permissions = ["read", "download"]) => {
+        try {
+            // Generate a token
+            const { success, token, message } = await usefileAPI.getState().generateShareToken(
+                fileId, 
+                email, 
+                permissions
+            );
+            
+            if (!success || !token) {
+                return { success: false, message: message || "Failed to generate share token" };
+            }
+            
+            // Create a shareable link
+            const baseUrl = window.location.origin;
+            const shareLink = `${baseUrl}/shared?token=${encodeURIComponent(token)}&recipient=${encodeURIComponent(email)}`;
+            
+            // Copy to clipboard
+            try {
+                await navigator.clipboard.writeText(shareLink);
+                return { 
+                    success: true, 
+                    shareLink,
+                    copied: true,
+                    message: "Share link copied to clipboard" 
+                };
+            } catch (clipboardError) {
+                console.error("Clipboard error:", clipboardError);
+                return { 
+                    success: true, 
+                    shareLink,
+                    copied: false,
+                    message: "Share link created (but couldn't copy to clipboard)" 
+                };
+            }
+        } catch (error) {
+            console.error("Error creating share link:", error);
+            return { 
+                success: false, 
+                message: error.message || "Failed to create share link" 
+            };
+        }
+    },
+    
     unshareFile: async (id, emails) => {
         try {
             const res = await fetch(`/api/file-details/${id}/unshare`, {
@@ -112,13 +234,31 @@ export const usefileAPI = create((set) => ({
     
     downloadFile: async (file) => {
         try {
-            console.log("Starting file download process for:", file.name);
+            console.log("Starting file download process for:", file);
             
-            const response = await axios.get(`/api/ipfs/download/${file.cid}`, {
+            if (!file.cid) {
+                console.error("Missing file CID for download");
+                return { success: false, message: "Missing file information (CID)" };
+            }
+            
+            let url = `/api/ipfs/download/${file.cid}`;
+            let config = {
                 responseType: 'blob',
-                withCredentials: true, // This will send cookies automatically
-            });
-                
+                withCredentials: true
+            };
+            
+            // If this is a shared file download with shareToken
+            if (file.shareToken) {
+                console.log("Using share token for download");
+                config.params = {
+                    token: file.shareToken,
+                    recipient: file.recipient
+                };
+            }
+            
+            console.log("Downloading from URL:", url);
+            const response = await axios.get(url, config);
+            
             if (!response.data) {
                 throw new Error('File not found');
             }
@@ -130,16 +270,16 @@ export const usefileAPI = create((set) => ({
             console.log("File decrypted successfully:", fileName);
             
             // Create a download link for the decrypted content
-            const url = window.URL.createObjectURL(new Blob([content]));
+            const downloadUrl = window.URL.createObjectURL(new Blob([content]));
             const link = document.createElement('a');
-            link.href = url;
+            link.href = downloadUrl;
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             
             // Cleanup
             link.remove();
-            window.URL.revokeObjectURL(url);
+            window.URL.revokeObjectURL(downloadUrl);
             
             return { success: true, message: "File downloaded and decrypted successfully" };
         } catch (error) {
