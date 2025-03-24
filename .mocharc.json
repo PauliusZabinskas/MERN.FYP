@@ -1,4 +1,8 @@
 {
-    "timeout": 5000,
-    "require": "chai"
-  }
+  "require": "@babel/register",
+  "node-option": [
+    "experimental-vm-modules"
+  ],
+  "recursive": true,
+  "exit": true
+}

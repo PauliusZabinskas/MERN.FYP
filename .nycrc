@@ -1,0 +1,19 @@
+{
+    "extends": "@istanbuljs/nyc-config-babel",
+    "reporter": ["text", "lcov", "html"],
+    "all": true,
+    "include": ["backend/**/*.js"],
+    "exclude": ["backend/**/*.test.js", "backend/utests/**/*", "node_modules/**"],
+    "cache": false,
+    "check-coverage": true,
+    "require": ["@babel/register"],
+    "sourceMap": false,
+    "instrument": true,
+    "esModules": true,
+    "extension": [".js"],
+    "lines": 80,
+    "statements": 80,
+    "functions": 80,
+    "branches": 80,
+    "produce-source-map": true
+}
