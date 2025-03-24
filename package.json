@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon backend/server.js",
-    "sonar": "sonar-scanner",
+    "test:report": "NODE_OPTIONS=--experimental-vm-modules mocha --require @babel/register --reporter mocha-junit-reporter --reporter-options mochaFile=./coverage/test-report.xml backend/utests/**/*.test.js --exit",
+    "sonar": "npm run coverage && npm run test:report && sonar-scanner",
     "coverage": "npx c8 npx mocha --require @babel/register backend/utests/**/*.test.js --exit",
     "test": "NODE_OPTIONS=--experimental-vm-modules mocha --require @babel/register backend/utests/**/*.test.js --exit"
   },
@@ -52,6 +53,7 @@
     "chai": "^5.2.0",
     "cookie-parser": "^1.4.7",
     "mocha": "^11.1.0",
+    "mocha-junit-reporter": "^2.2.1",
     "nodemon": "^3.1.9",
     "nyc": "^17.1.0",
     "proxyquire": "^2.1.3",
