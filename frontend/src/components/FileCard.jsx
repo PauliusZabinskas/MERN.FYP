@@ -44,6 +44,27 @@ const FileCard = ({ file }) => {
       onClose: onShareClose 
     } = useDisclosure();
 
+    const formatExpiryTime = (timestamp) => {
+        if (!timestamp) return null;
+        
+        const expiryDate = new Date(timestamp * 1000);
+        const now = new Date();
+        
+        // Calculate difference in days
+        const diffTime = expiryDate - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 1) {
+            return `${diffDays} days`;
+        } else if (diffDays === 1) {
+            return "1 day";
+        } else {
+            // Less than a day, show hours
+            const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+            return diffHours > 0 ? `${diffHours} hours` : "< 1 hour";
+        }
+    };
+
     const handleDeleteFile = async (id) => {
         const { success, message } = await deleteFile(id);
         if (!success) {
@@ -190,8 +211,15 @@ const FileCard = ({ file }) => {
                         {file.name}
                     </Heading>
                     {!isOwner && (
+                    <HStack spacing={1} flexWrap="wrap">
                         <Badge colorScheme="purple">Shared with me</Badge>
-                    )}
+                        {file.sharingMethod === 'temporary' && file.expiryInfo && (
+                            <Tooltip label={`Expires in ${formatExpiryTime(file.expiryInfo.expiresAt)}`}>
+                                <Badge colorScheme="orange" whiteSpace="nowrap">Temporary</Badge>
+                            </Tooltip>
+                        )}
+                    </HStack>
+                )}
                 </HStack>
 
                 <Text fontWeight='bold' fontSize='sm' color={textColor} mb={2}>

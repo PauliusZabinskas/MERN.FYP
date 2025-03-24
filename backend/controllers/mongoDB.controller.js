@@ -8,21 +8,56 @@ export const getAllFileDetails = async (req, res) => {
   try {
     // Get the user from auth middleware
     const user = req.user;
+    const currentTime = Math.floor(Date.now() / 1000);
+    
+    // First, clean up expired token shares from all files
+    await File.updateMany(
+      { "tokenSharedWith.tokenExp": { $lt: currentTime } },
+      { $pull: { tokenSharedWith: { tokenExp: { $lt: currentTime } } } }
+    );
     
     // Find files where user is the owner OR where user's email is in the sharedWith array
+    // OR where user's email is in a non-expired tokenSharedWith entry
     const files = await File.find({ 
       $or: [
         { owner: user.email },
-        { sharedWith: user.email }
+        { sharedWith: user.email },
+        { 
+          "tokenSharedWith": { 
+            $elemMatch: { 
+              recipient: user.email, 
+              tokenExp: { $gt: currentTime } 
+            } 
+          } 
+        }
       ]
     });
     
     // Mark which files are owned vs shared
     const filesWithAccess = files.map(file => {
       const isOwner = file.owner === user.email;
+      const isShared = file.sharedWith.includes(user.email);
+      const isTokenShared = file.tokenSharedWith?.some(share => 
+        share.recipient === user.email && share.tokenExp > currentTime
+      );
+      
+      // Get expiration if token-shared
+      let expiryInfo = null;
+      if (isTokenShared) {
+        const tokenShare = file.tokenSharedWith.find(share => share.recipient === user.email);
+        if (tokenShare) {
+          expiryInfo = {
+            expiresAt: tokenShare.tokenExp,
+            isTemporary: true
+          };
+        }
+      }
+      
       return {
         ...file._doc,
-        accessType: isOwner ? 'owner' : 'shared'
+        accessType: isOwner ? 'owner' : 'shared',
+        sharingMethod: isTokenShared ? 'temporary' : 'permanent',
+        expiryInfo: expiryInfo
       };
     });
     

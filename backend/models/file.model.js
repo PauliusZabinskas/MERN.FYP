@@ -21,6 +21,12 @@ const fileSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  tokenSharedWith: [
+    {
+      recipient: { type: String, required: true },
+      tokenExp: { type: Number, required: true } // Expiration timestamp
+    }
+  ]
 }, {
     timestamps: true,
 });

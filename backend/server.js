@@ -7,6 +7,7 @@ import authRoute from './routes/auth.route.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import shareTokenRoutes from "./routes/share.token.api.js";
+import { startCleanupJob } from './util/cleanupJob.js';
 
 dotenv.config();
 
@@ -21,6 +22,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+startCleanupJob();
 
 // Routes
 app.use('/api/auth', authRoute);

@@ -6,64 +6,74 @@ import File from "../models/file.model.js";
  * @route POST /api/share
  */
 export const createShareToken = async (req, res) => {
-  try {
-    const { fileId, recipient, permissions = ["read", "download"], expiresIn } = req.body;
-    
-    if (!fileId || !recipient) {
-      return res.status(400).json({
-        success: false,
-        message: "File ID and recipient email are required"
+    try {
+      const { fileId, recipient, permissions = ["read", "download"], expiresIn } = req.body;
+      
+      if (!fileId || !recipient) {
+        return res.status(400).json({
+          success: false,
+          message: "File ID and recipient email are required"
+        });
+      }
+      
+      // Check if file exists and user is the owner
+      const file = await File.findById(fileId);
+      
+      if (!file) {
+        return res.status(404).json({
+          success: false,
+          message: "File not found"
+        });
+      }
+      
+      // Verify ownership
+      if (file.owner !== req.user.email) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You are not the owner of this file"
+        });
+      }
+      
+      // Generate the share token
+      const shareInfo = {
+        fileId,
+        owner: req.user.email,
+        recipient,
+        permissions,
+        expiresIn // Will use default if undefined
+      };
+      
+      const token = generateShareToken(shareInfo);
+      
+      // Calculate expiration timestamp
+      const expirationSeconds = shareInfo.expiresIn || 7 * 24 * 60 * 60; // Default to 7 days
+      const expirationTime = Math.floor(Date.now() / 1000) + expirationSeconds;
+      
+      // Instead of adding to regular sharedWith, add to tokenSharedWith with expiration
+      // First remove any existing token shares for the same recipient
+      file.tokenSharedWith = file.tokenSharedWith.filter(share => share.recipient !== recipient);
+      
+      // Then add the new token share
+      file.tokenSharedWith.push({
+        recipient: recipient,
+        tokenExp: expirationTime
       });
-    }
-    
-    // Check if file exists and user is the owner
-    const file = await File.findById(fileId);
-    
-    if (!file) {
-      return res.status(404).json({
-        success: false,
-        message: "File not found"
-      });
-    }
-    
-    // Verify ownership
-    if (file.owner !== req.user.email) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied: You are not the owner of this file"
-      });
-    }
-    
-    // Generate the share token
-    const shareInfo = {
-      fileId,
-      owner: req.user.email,
-      recipient,
-      permissions,
-      expiresIn // Will use default if undefined
-    };
-    
-    const token = generateShareToken(shareInfo);
-    
-    // Optionally update the file's sharedWith list if not already included
-    if (!file.sharedWith.includes(recipient)) {
-      file.sharedWith.push(recipient);
+      
       await file.save();
+      
+      res.status(200).json({
+        success: true,
+        shareToken: token
+      });
+      
+    } catch (error) {
+      console.error("Error generating share token:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to generate share token"
+      });
     }
-    
-    res.status(200).json({
-      success: true,
-      shareToken: token
-    });
-    
-  } catch (error) {
-    console.error("Error generating share token:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to generate share token"
-    });
-  }
-};
+  };
 
 /**
  * Verify a share token and return file access information
