@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon backend/server.js",
     "test:report": "NODE_OPTIONS=--experimental-vm-modules mocha --require @babel/register --reporter mocha-junit-reporter --reporter-options mochaFile=./coverage/test-report.xml backend/utests/**/*.test.js --exit",
-    "sonar": "npm run coverage && npm run test:report && sonar-scanner",
+    "sonar": "sonar-scanner -Dsonar.token=$FYP_sonar",
     "coverage": "npx c8 npx mocha --require @babel/register backend/utests/**/*.test.js --exit",
     "test": "NODE_OPTIONS=--experimental-vm-modules mocha --require @babel/register backend/utests/**/*.test.js --exit"
   },
