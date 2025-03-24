@@ -252,13 +252,20 @@ export const usefileAPI = create((set) => ({
             
             // If this is a shared file download with shareToken
             if (file.shareToken) {
-                console.log("Using share token for download");
+                console.log("Using share token for download:", file.shareToken);
+                
+                // Add the recipient as a query parameter
                 config.params = {
-                    token: file.shareToken,
                     recipient: file.recipient
+                };
+                
+                // Add the token in the Authorization header with Bearer prefix
+                config.headers = {
+                    'Authorization': `Bearer ${file.shareToken}`
                 };
             }
             
+            console.log("Download config:", config);
             console.log("Downloading from URL:", url);
             const response = await axios.get(url, config);
             

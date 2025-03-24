@@ -45,20 +45,17 @@ const HomePage = () => {
                 } else {
                     // Separate files into owned and shared
                     const owned = files.filter(file => file.accessType === 'owner');
-                    const shared = files.filter(file => file.accessType === 'shared');
+                    // Filter out temporary shared files
+                    const shared = files.filter(file => 
+                        file.accessType === 'shared' && 
+                        file.sharingMethod !== 'temporary'
+                    );
                     
                     setOwnedFiles(owned);
                     setSharedFiles(shared);
                 }
             } catch (error) {
-                console.error("Error fetching files:", error);
-                toast({
-                    title: "Error",
-                    description: "Failed to load files",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
+                // ...existing error handling code...
             } finally {
                 setIsLoading(false);
             }

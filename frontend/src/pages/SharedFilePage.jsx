@@ -24,6 +24,7 @@ const SharedFilePage = () => {
     const [fileInfo, setFileInfo] = useState(null);
     const [error, setError] = useState(null);
     const [expiryInfo, setExpiryInfo] = useState(null);
+    const [isTemporary, setIsTemporary] = useState(false);
     const location = useLocation();
     const toast = useToast();
     const { verifyShareToken, downloadFile } = usefileAPI();
@@ -68,6 +69,14 @@ const SharedFilePage = () => {
                 
                 if (!result.success) {
                     throw new Error(result.message || 'This share link is invalid or expired');
+                }
+                
+                // Check if this is a temporary file
+                if (result.fileInfo.sharingMethod === 'temporary') {
+                    setIsTemporary(true);
+                    setError('Temporary files cannot be viewed on this page. Please use the direct download link that was provided.');
+                    setIsLoading(false);
+                    return; // Exit early without setting fileInfo
                 }
                 
                 // Set file info from successful verification
@@ -187,6 +196,11 @@ const SharedFilePage = () => {
                     <AlertDescription maxWidth="sm">
                         {error}
                     </AlertDescription>
+                    {isTemporary && (
+                        <Button mt={4} colorScheme="blue" onClick={() => window.history.back()}>
+                            Go Back
+                        </Button>
+                    )}
                 </Alert>
             ) : (
                 <VStack spacing={6} align="stretch">

@@ -110,7 +110,26 @@ const FileCard = ({ file }) => {
 
     const handleDownloadFile = async () => {
         try {
-            const { success, message } = await downloadFile(file);
+            // Check if this is a file shared via token and we have necessary token info
+            const downloadInfo = { ...file };
+            
+            // If this file was shared via token, find the token info
+            if (file.tokenSharedWith && file.tokenSharedWith.length > 0 && !isOwner) {
+                // Find token info for the current user
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                const userEmail = currentUser?.email;
+                
+                if (userEmail) {
+                    const tokenInfo = file.tokenSharedWith.find(t => t.recipient === userEmail);
+                    if (tokenInfo) {
+                        // Add token info to download request
+                        downloadInfo.shareToken = tokenInfo.token;
+                        downloadInfo.recipient = userEmail;
+                    }
+                }
+            }
+            
+            const { success, message } = await downloadFile(downloadInfo);
             
             if (!success) {
                 throw new Error(message);
