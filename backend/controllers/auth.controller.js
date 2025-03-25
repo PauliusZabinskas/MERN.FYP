@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"; // Add this import for the Verify function
 
 export const Signup = async (req, res, next) => {
-    try {
+  try {
       console.log("Registration request:", req.body);
       const { email, password, username, createdAt } = req.body;
       
@@ -15,11 +15,23 @@ export const Signup = async (req, res, next) => {
         });
       }
       
-      const existingUser = await User.findOne({ email });
+      // Validate email format before querying
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format"
+        });
+      }
+      
+      // Use a simple string for the query to prevent NoSQL injection
+      const existingUser = await User.findOne({ email: String(email).trim() });
+      
+      // Check if user already exists
       if (existingUser) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "User already exists" 
+        return res.status(400).json({
+          success: false,
+          message: "Email already in use"
         });
       }
       
@@ -64,7 +76,17 @@ export const Signup = async (req, res, next) => {
         });
       }
       
-      const user = await User.findOne({ email });
+      // Validate email format before querying
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format"
+        });
+      }
+      
+      // Use a simple string for the query to prevent NoSQL injection
+      const user = await User.findOne({ email: String(email).trim() });
       
       if (!user) {
         return res.status(401).json({

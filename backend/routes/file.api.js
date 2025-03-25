@@ -12,7 +12,14 @@ import {
 import { userVerification } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+// Set safe file size limits to prevent DoS attacks
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+    files: 1 // Maximum 1 file per request
+  }
+});
 
 // Apply userVerification middleware BEFORE the controller function
 router.post('/', userVerification, upload.single('file'), createFileDetails);
