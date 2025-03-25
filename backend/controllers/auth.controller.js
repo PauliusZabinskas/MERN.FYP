@@ -8,15 +8,15 @@ export const Signup = async (req, res, next) => {
       console.log("Registration request:", req.body);
       const { email, password, username, createdAt } = req.body;
       
-      if (!email || !password || !username) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "All fields are required" 
+      if (email.length > 320) { // Standard maximum email length
+        return res.status(400).json({
+          success: false,
+          message: "Email exceeds maximum allowed length"
         });
       }
       
-      // Validate email format before querying
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Then use the improved regex
+      const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,255}$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
@@ -77,7 +77,7 @@ export const Signup = async (req, res, next) => {
       }
       
       // Validate email format before querying
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,255}$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
