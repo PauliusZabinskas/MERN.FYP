@@ -5,63 +5,46 @@ import jwt from "jsonwebtoken"; // Add this import for the Verify function
 
 export const Signup = async (req, res, next) => {
   try {
-      console.log("Registration request:", req.body);
-      const { email, password, username, createdAt } = req.body;
-      
-      if (email.length > 320) { // Standard maximum email length
-        return res.status(400).json({
-          success: false,
-          message: "Email exceeds maximum allowed length"
-        });
+    console.log("Registration request:", req.body);
+    const { email, password, username, createdAt } = req.body;
+
+    // Instead of manually sanitizing here, rely on Mongoose schema validations:
+    const newUser = new User({
+      email,
+      password,
+      username,
+      // Mongoose will validate createdAt if configured in the schema
+      createdAt: createdAt || new Date()
+    });
+
+    // Save triggers your schema validations and middleware
+    const user = await newUser.save();
+
+    const token = createSecretToken(user._id);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
       }
-      
-      // Then use the improved regex
-      const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,255}$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid email format"
-        });
-      }
-      
-      // Use a simple string for the query to prevent NoSQL injection
-      const existingUser = await User.findOne({ email: String(email).trim() });
-      
-      // Check if user already exists
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: "Email already in use"
-        });
-      }
-      
-      const user = await User.create({ email, password, username, createdAt });
-      const token = createSecretToken(user._id);
-      
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
-      });
-      
-      res.status(201).json({ 
-        success: true, 
-        message: "User registered successfully",
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username,
-        }
-      });
+    });
     } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: error.message || "Internal server error" 
-      });
-    }
-  };
+    console.error("Registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};  
 
   
   export const Login = async (req, res) => {
@@ -85,8 +68,9 @@ export const Signup = async (req, res, next) => {
         });
       }
       
+      const sanitizedEmail = String(email).trim();
       // Use a simple string for the query to prevent NoSQL injection
-      const user = await User.findOne({ email: String(email).trim() });
+      const user = await User.findOne({ email: sanitizedEmail });
       
       if (!user) {
         return res.status(401).json({
