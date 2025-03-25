@@ -4,7 +4,13 @@ import { addFile, getFile, getAllFiles, downloadFile } from '../controllers/ipfs
 import { userVerification, validateShareToken, requireAuthOrValidShare } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+      files: 1 // Maximum 1 file per request
+    }
+  });
 
 // Routes that require full authentication
 router.post('/', userVerification, upload.single('file'), addFile);

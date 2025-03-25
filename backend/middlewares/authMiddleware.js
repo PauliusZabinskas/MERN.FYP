@@ -11,7 +11,7 @@ export const userVerification = (req, res, next) => {
 
     // Then check Authorization header
     const authHeader = req.headers.authorization;
-    const headerToken = authHeader && authHeader.startsWith('Bearer ') 
+    const headerToken = authHeader?.startsWith('Bearer ') 
       ? authHeader.split(' ')[1] 
       : null;
     
@@ -124,7 +124,7 @@ export const requireAuthOrValidShare = (permission) => {
       // First check for user authentication
       const cookieToken = req.cookies.token;
       const authHeader = req.headers.authorization;
-      const headerToken = authHeader && authHeader.startsWith('Bearer ') 
+      const headerToken = authHeader?.startsWith('Bearer ') 
         ? authHeader.split(' ')[1] 
         : null;
       

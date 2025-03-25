@@ -13,6 +13,10 @@ dotenv.config();
 
 const app = express();
 
+// Disable X-Powered-By header to hide Express version information
+app.disable('x-powered-by');
+
+
 // Middlewares
 app.use(cors({
   origin: 'http://localhost:5173',

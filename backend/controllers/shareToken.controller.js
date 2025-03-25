@@ -1,4 +1,4 @@
-import { generateShareToken, verifyShareToken, checkShareAccess } from "../util/secretToken.js";
+import { generateShareToken, verifyShareToken } from "../util/secretToken.js";
 import File from "../models/file.model.js";
 
 /**

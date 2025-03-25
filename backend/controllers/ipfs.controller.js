@@ -1,8 +1,7 @@
 import axios from 'axios';
-import fs from 'fs';
 import FormData from 'form-data';
 import File from "../models/file.model.js";
-import { verifyShareToken, checkShareAccess } from "../util/secretToken.js";
+import { checkShareAccess } from "../util/secretToken.js";
 
 // IPFS node endpoint
 const ipfsEndpoint = 'http://localhost:5001/api/v0';
@@ -43,9 +42,9 @@ export const getFile = async (req, res) => {
     
     // Get share token if provided
     const shareToken = req.query.token || 
-                      (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') 
-                        ? req.headers.authorization.split(' ')[1] 
-                        : null);
+                  req.headers.authorization?.startsWith('Bearer ') 
+                    ? req.headers.authorization.split(' ')[1] 
+                    : null;
     
     // Check if file exists
     const file = await File.findOne({ cid });
@@ -105,9 +104,9 @@ export const downloadFile = async (req, res) => {
     
     // Get share token if provided
     const shareToken = req.query.token || 
-                      (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') 
-                        ? req.headers.authorization.split(' ')[1] 
-                        : null);
+                  req.headers.authorization?.startsWith('Bearer ') 
+                    ? req.headers.authorization.split(' ')[1] 
+                    : null;
     
     // Check if file exists
     const file = await File.findOne({ cid });

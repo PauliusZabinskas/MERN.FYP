@@ -36,7 +36,6 @@ export const getAllFileDetails = async (req, res) => {
     // Mark which files are owned vs shared
     const filesWithAccess = files.map(file => {
       const isOwner = file.owner === user.email;
-      const isShared = file.sharedWith.includes(user.email);
       const isTokenShared = file.tokenSharedWith?.some(share => 
         share.recipient === user.email && share.tokenExp > currentTime
       );
@@ -251,9 +250,20 @@ export const shareFile = async (req, res) => {
     });
   }
 
-  // Basic email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const invalidEmails = emails.filter(email => !emailRegex.test(email));
+  // First check overall length of each email to avoid excessive processing
+  const oversizeEmails = emails.filter(email => typeof email === 'string' && email.length > 320);
+  if (oversizeEmails.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Some emails exceed maximum allowed length: ${oversizeEmails.join(', ')}`
+    });
+  }
+
+  // Basic email validation with bounded regex patterns
+  const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,255}$/;
+  const invalidEmails = emails.filter(email => 
+    typeof email !== 'string' || !emailRegex.test(email)
+  );
   
   if (invalidEmails.length > 0) {
     return res.status(400).json({ 
