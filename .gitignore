@@ -3,3 +3,4 @@ node_modules
 coverage
 .env
 
+ZAP_2_16_0_unix.sh
