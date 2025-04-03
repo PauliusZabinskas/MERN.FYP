@@ -39,8 +39,12 @@ const Navbar = () => {
           }
         };
         
-        checkAuth();
-    }, [location.pathname]); // Re-check auth when route changes
+        const timeoutId = setTimeout(() => {
+            checkAuth();
+          }, 5000); // 500ms delay
+          
+          return () => clearTimeout(timeoutId); // Cleanup
+        }, [location.pathname]);
       
     // For logout:
     const handleLogout = async () => {
