@@ -3,7 +3,7 @@ import { createSecretToken } from "../util/secretToken.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"; // Add this import for the Verify function
 
-export const Signup = async (req, res, next) => {
+export const Signup = async (req, res) => {
   try {
     console.log("Registration request:", req.body);
     const { email, password, username, createdAt } = req.body;

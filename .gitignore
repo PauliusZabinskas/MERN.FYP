@@ -2,5 +2,6 @@ node_modules
 .scannerwork
 coverage
 .env
+backend/certificates/key.pem
 
 ZAP_2_16_0_unix.sh

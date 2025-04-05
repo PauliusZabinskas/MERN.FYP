@@ -57,11 +57,6 @@ export const encryptFile = async (file) => {
           const content = event.target.result;
           console.log("File content read:", content.substring(0, 50) + (content.length > 50 ? "..." : ""));
           
-          // Test if encryption works on this content
-          const testEncrypted = encryptContent("Test string");
-          const testDecrypted = decryptContent(testEncrypted);
-          console.log("Encryption test:", testEncrypted, "->", testDecrypted);
-          
           // Now try to encrypt the actual file content
           const encrypted = encryptContent(content);
           console.log("Encrypted content:", encrypted.substring(0, 50) + "...");
@@ -74,14 +69,6 @@ export const encryptFile = async (file) => {
           );
           
           console.log("Created encrypted file:", encryptedFile.name, encryptedFile.type, encryptedFile.size);
-          
-          // Verify we can read back the content
-          const testReader = new FileReader();
-          testReader.onload = (e) => {
-            const testContent = e.target.result;
-            console.log("Read back encrypted file content:", testContent.substring(0, 50) + "...");
-          };
-          testReader.readAsText(encryptedFile);
           
           resolve(encryptedFile);
         } catch (error) {
