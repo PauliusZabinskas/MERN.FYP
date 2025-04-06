@@ -55,7 +55,14 @@ const HomePage = () => {
                     setSharedFiles(shared);
                 }
             } catch (error) {
-                // ...existing error handling code...
+                console.error("Error fetching files:", error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load files",
+                    status: "error",
+                    duration: 3000,
+                    isClosable: true,
+                });
             } finally {
                 setIsLoading(false);
             }
