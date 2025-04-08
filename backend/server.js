@@ -21,7 +21,7 @@ app.disable('x-powered-by');
 // More lenient rate limit for authentication routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300000, // Allow more login attempts per window
+  max: 3000000, // Allow more login attempts per window
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many authentication attempts, please try again later'
@@ -30,7 +30,7 @@ const authLimiter = rateLimit({
 // Rate limiting for general API routes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30000, // Higher limit for general API usage
+  max: 3000000, // Higher limit for general API usage
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again later'
