@@ -25,15 +25,6 @@ services:
       - '127.0.0.1:8080:8080'
       - '127.0.0.1:5001:5001'
 
-  zap:
-    image: zaproxy/zap-stable
-    container_name: zap2
-    ports:
-      - "9080:8080"  # Map the container's 8080 to host 9080
-      - "9090:8090"
-    command: zap.sh -daemon -host 0.0.0.0 -port 8080
-    volumes:
-      - ./:/zap/wrk:rw
   
 volumes:
   mongo-data:
